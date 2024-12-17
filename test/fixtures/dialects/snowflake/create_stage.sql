@@ -105,7 +105,3 @@ CREATE OR REPLACE STAGE foo.bar
 
 CREATE OR ALTER STAGE foo.bar
   URL = 's3://foobar';
-
-CREATE STAGE foo.bar
-  STORAGE_INTEGRATION=$your_variable
-  URL=$your_variable;
