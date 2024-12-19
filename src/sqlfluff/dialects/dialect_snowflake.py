@@ -733,7 +733,15 @@ snowflake_dialect.replace(
         Sequence("ORDER", "BY"),
         "LIMIT",
         "FETCH",
-        "OFFSET",
+        Sequence(
+            "AT",
+            Bracketed(
+                OneOf("TIMESTAMP", "OFFSET", "STATEMENT", "STREAM"),
+                Ref("ParameterAssignerSegment"),
+                Ref("ExpressionSegment"),
+                parse_mode=ParseMode.GREEDY,
+            ),
+        ),
         Ref("SetOperatorSegment"),
     ),
     FromClauseTerminatorGrammar=OneOf(
@@ -7988,8 +7996,17 @@ class LimitClauseSegment(ansi.LimitClauseSegment):
 class SelectClauseSegment(ansi.SelectClauseSegment):
     """A group of elements in a select target statement."""
 
+    _guy = Sequence(
+        "AT",
+        Bracketed(
+            OneOf("TIMESTAMP", "OFFSET", "STATEMENT", "STREAM"),
+            Ref("ParameterAssignerSegment"),
+            Ref("ExpressionSegment"),
+            parse_mode=ParseMode.GREEDY,
+        ),
+    )
     match_grammar = ansi.SelectClauseSegment.match_grammar.copy(
-        terminators=[Ref.keyword("FETCH"), Ref.keyword("OFFSET")],
+        terminators=[Ref.keyword("FETCH"), _guy],
     )
 
 

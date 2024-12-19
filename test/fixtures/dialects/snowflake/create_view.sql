@@ -107,3 +107,11 @@ CREATE OR ALTER VIEW view_with_column_comment
 )
 AS SELECT col1
 FROM src_table;
+
+CREATE OR REPLACE VIEW my_view
+AS
+SELECT
+    ID,
+    OFFSET,
+FROM my_table
+WHERE foo = bar;
