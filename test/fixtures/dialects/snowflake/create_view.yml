@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 732ad225c3fc9946b95ac641a624c3f3069c5ba169c278f96082ccc38ad8509c
+_hash: cda42a42981f5dfee411e043ef503c2cf25c1932a0bad3e7ff6050371ee7855b
 file:
 - statement:
     create_view_statement:
@@ -739,4 +739,180 @@ file:
               table_expression:
                 table_reference:
                   naked_identifier: src_table
+- statement_terminator: ;
+- statement:
+    scripting_block_statement:
+    - keyword: BEGIN
+    - statement:
+        select_statement:
+          select_clause:
+            keyword: SELECT
+            select_clause_element:
+              wildcard_expression:
+                wildcard_identifier:
+                  star: '*'
+          from_clause:
+            keyword: FROM
+            from_expression:
+              from_expression_element:
+                table_expression:
+                  table_reference:
+                    naked_identifier: mytable
+    - statement_terminator: ;
+    - keyword: END
+- statement_terminator: ;
+- statement:
+    create_procedure_statement:
+    - keyword: CREATE
+    - keyword: OR
+    - keyword: REPLACE
+    - keyword: PROCEDURE
+    - function_name:
+      - naked_identifier: _ENT_INTEGRATION
+      - dot: .
+      - naked_identifier: CORE
+      - dot: .
+      - function_name_identifier: CORE_RECRUITING_CANDIDATE_PROFILE_EXTENSION_LOAD
+    - function_parameter_list:
+        bracketed:
+          start_bracket: (
+          end_bracket: )
+    - keyword: RETURNS
+    - data_type:
+        data_type_identifier: VARCHAR
+    - keyword: LANGUAGE
+    - keyword: SQL
+    - keyword: EXECUTE
+    - keyword: AS
+    - keyword: CALLER
+    - keyword: AS
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          create_table_statement:
+          - keyword: CREATE
+          - keyword: OR
+          - keyword: REPLACE
+          - keyword: TEMPORARY
+          - keyword: TABLE
+          - table_reference:
+            - naked_identifier: _ENT_INTEGRATION
+            - dot: .
+            - naked_identifier: CORE
+            - dot: .
+            - naked_identifier: CORE_RECRUITING_CANDIDATE_PROFILE_EXTENSION_TEMP
+          - keyword: AS
+          - select_statement:
+              select_clause:
+              - keyword: SELECT
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: SourceID
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: DWH_SOURCE_ID
+              - comma: ','
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: CANDIDATEID
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: CANDIDATE_ID
+              - comma: ','
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: CREATEDBY
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: CREATED_BY_NAME
+              - comma: ','
+              - select_clause_element:
+                  function:
+                    function_name:
+                      function_name_identifier: TO_TIMESTAMP_TZ
+                    function_contents:
+                      bracketed:
+                        start_bracket: (
+                        expression:
+                          column_reference:
+                            naked_identifier: CREATEDDATETIME
+                        end_bracket: )
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: CREATED_TIMESTAMP
+              - comma: ','
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: LASTMODIFIEDBY
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: LAST_MODIFIED_BY_NAME
+              - comma: ','
+              - select_clause_element:
+                  function:
+                    function_name:
+                      function_name_identifier: TO_TIMESTAMP_TZ
+                    function_contents:
+                      bracketed:
+                        start_bracket: (
+                        expression:
+                          column_reference:
+                            naked_identifier: LASTMODIFIEDDATETIME
+                        end_bracket: )
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: LAST_MODIFIED_TIMESTAMP
+              - comma: ','
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: MDFSYSTEMRECORDSTATUS
+                  alias_expression:
+                    keyword: as
+                    naked_identifier: MODIFIED_SYSTEM_RECORD_STATUS_TEXT
+              - comma: ','
+              - select_clause_element:
+                  column_reference:
+                    naked_identifier: METADATA$ACTION
+              from_clause:
+                keyword: FROM
+                from_expression:
+                  from_expression_element:
+                    table_expression:
+                      bracketed:
+                        start_bracket: (
+                        select_statement:
+                          select_clause:
+                          - keyword: SELECT
+                          - select_clause_element:
+                              quoted_literal: "'SF'"
+                              alias_expression:
+                                keyword: AS
+                                naked_identifier: SourceID
+                          - comma: ','
+                          - select_clause_element:
+                              wildcard_expression:
+                                wildcard_identifier:
+                                  star: '*'
+                          from_clause:
+                            keyword: FROM
+                            from_expression:
+                              from_expression_element:
+                                table_expression:
+                                  table_reference:
+                                  - naked_identifier: _ENT_LANDING
+                                  - dot: .
+                                  - naked_identifier: SF
+                                  - dot: .
+                                  - naked_identifier: CANDIDATEPROFILEEXTENSION_CUR_VW_STREAM
+                        end_bracket: )
+                    alias_expression:
+                      naked_identifier: Z
+      - statement_terminator: ;
+      - statement:
+          return_statement:
+            keyword: return
+            expression:
+              quoted_literal: "'Success'"
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;

@@ -239,6 +239,11 @@ snowflake_dialect.add(
         CodeSegment,
         type="semi_structured_element",
     ),
+    ColonLiteralSegment=RegexParser(
+        r":[a-zA-Z0-9_]+",
+        CodeSegment,
+        type="colon_literal",
+    ),
     QuotedSemiStructuredElementSegment=TypedParser(
         "double_quote",
         CodeSegment,
@@ -485,6 +490,7 @@ snowflake_dialect.add(
     QuestionMarkSegment=StringParser("?", SymbolSegment, type="question_mark"),
     CaretSegment=StringParser("^", SymbolSegment, type="caret"),
     DollarSegment=StringParser("$", SymbolSegment, type="dollar"),
+    RightArrowSegment=StringParser("=>", SymbolSegment, type="right_arrow"),
     PatternQuantifierGrammar=Sequence(
         OneOf(
             Ref("PositiveSegment"),
@@ -7941,6 +7947,11 @@ class CallStatementSegment(BaseSegment):
         Sequence(
             Ref("FunctionNameSegment"),
             Ref("FunctionContentsSegment"),
+        ),
+        Sequence(
+            "INTO",
+            Ref("ColonLiteralSegment"),
+            optional=True,
         ),
     )
 
