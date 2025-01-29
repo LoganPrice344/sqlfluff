@@ -259,6 +259,11 @@ snowflake_dialect.add(
         CodeSegment,
         type="variable",
     ),
+    SnowflakeVariableNameSegment=RegexParser(
+        r":[a-zA-Z0-9_]*",
+        CodeSegment,
+        type="variable",
+    ),
     ReferencedVariableNameSegment=RegexParser(
         r"\$[A-Z_][A-Z0-9_]*",
         CodeSegment,
@@ -698,12 +703,19 @@ snowflake_dialect.replace(
     ),
     BaseExpressionElementGrammar=ansi_dialect.get_grammar(
         "BaseExpressionElementGrammar"
-    ).copy(
+    )
+    .copy(
         insert=[
             # Allow use of CONNECT_BY_ROOT pseudo-columns.
             # https://docs.snowflake.com/en/sql-reference/constructs/connect-by.html#:~:text=Snowflake%20supports%20the%20CONNECT_BY_ROOT,the%20Examples%20section%20below.
             Sequence("CONNECT_BY_ROOT", Ref("ColumnReferenceSegment")),
             Sequence("PRIOR", Ref("ColumnReferenceSegment")),
+        ],
+        before=Ref("LiteralGrammar"),
+    )
+    .copy(
+        insert=[
+            Ref("SnowflakeVariableNameSegment"),
         ],
         before=Ref("LiteralGrammar"),
     ),
@@ -1424,6 +1436,7 @@ class StatementSegment(ansi.StatementSegment):
             Ref("CreateRowAccessPolicyStatementSegment"),
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
+            Ref("ExceptionBlockStatementSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -8945,5 +8958,52 @@ class AlterTagStatementSegment(BaseSegment):
                 ),
             ),
             Sequence("UNSET", "ALLOWED_VALUES"),
+        ),
+    )
+
+
+class ExceptionBlockStatementSegment(BaseSegment):
+    """A snowflake `BEGIN ... END` statement for SQL scripting.
+
+    https://docs.snowflake.com/en/sql-reference/snowflake-scripting/begin
+    """
+
+    type = "exception_block_statement"
+
+    match_grammar = Sequence(
+        Sequence(
+            "EXCEPTION",
+            Indent,
+            OneOf(
+                Sequence(
+                    "WHEN",
+                    Ref("ObjectReferenceSegment"),
+                    "THEN",
+                ),
+                Sequence(
+                    "WHEN",
+                    "OTHER",
+                    "THEN",
+                ),
+            ),
+            Ref("StatementSegment"),
+        ),
+        AnyNumberOf(
+            Sequence(
+                Ref("DelimiterGrammar"),
+                OneOf(
+                    Sequence(
+                        "WHEN",
+                        Ref("ObjectReferenceSegment"),
+                        "THEN",
+                    ),
+                    Sequence(
+                        "WHEN",
+                        "OTHER",
+                        "THEN",
+                    ),
+                ),
+                Ref("StatementSegment"),
+            ),
         ),
     )
