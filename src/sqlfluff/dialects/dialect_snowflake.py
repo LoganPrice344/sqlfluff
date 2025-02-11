@@ -6634,16 +6634,15 @@ class CreateStageSegment(BaseSegment):
                                 optional=True,
                             ),
                         ),
+                        optional=True,
                     ),
                     "URL",
                     Ref("EqualsSegment"),
                     OneOf(
                         Ref("S3Path"),
                         Ref("GCSPath"),
-                        OneOf(
-                            Ref("AzureBlobStoragePath"),
-                            Ref("ReferencedVariableNameSegment"),
-                        ),
+                        Ref("AzureBlobStoragePath"),
+                        Ref("ReferencedVariableNameSegment"),
                     ),
                 ),
             ),
@@ -8978,6 +8977,12 @@ class ExceptionBlockStatementSegment(BaseSegment):
                 Sequence(
                     "WHEN",
                     Ref("ObjectReferenceSegment"),
+                    AnyNumberOf(
+                        Sequence(
+                            "OR",
+                            Ref("ObjectReferenceSegment"),
+                        ),
+                    ),
                     "THEN",
                 ),
                 Sequence(
@@ -8995,6 +9000,12 @@ class ExceptionBlockStatementSegment(BaseSegment):
                     Sequence(
                         "WHEN",
                         Ref("ObjectReferenceSegment"),
+                        AnyNumberOf(
+                            Sequence(
+                                "OR",
+                                Ref("ObjectReferenceSegment"),
+                            ),
+                        ),
                         "THEN",
                     ),
                     Sequence(
