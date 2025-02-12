@@ -1393,8 +1393,10 @@ class StatementSegment(ansi.StatementSegment):
             Ref("AlterStageSegment"),
             Ref("CreateStreamStatementSegment"),
             Ref("CreateStreamlitStatementSegment"),
+            Ref("CreateCortexSearchServiceStatementSegment"),
             Ref("AlterStreamStatementSegment"),
             Ref("AlterStreamlitStatementSegment"),
+            Ref("AlterCortexSearchServiceStatementSegment"),
             Ref("UnsetStatementSegment"),
             Ref("UndropStatementSegment"),
             Ref("CommentStatementSegment"),
@@ -2091,7 +2093,106 @@ class AlterTableStatementSegment(ansi.AlterTableStatementSegment):
                     ),
                 ),
             ),
-            # @TODO: Add/drop row access policies
+            Ref("DataGovnPolicyTagActionSegment"),
+        ),
+    )
+
+
+class DataGovnPolicyTagActionSegment(BaseSegment):
+    """The dataGovnPolicyTagAction segment for alter table parsing."""
+
+    type = "data_gov_policy_tag_action_segment"
+
+    match_grammar = OneOf(
+        Sequence(
+            "SET",
+            Ref("TagEqualsSegment"),
+        ),
+        Sequence(
+            "UNSET",
+            Ref("TagEqualsSegment"),
+        ),
+        Sequence(
+            "ADD",
+            "ROW",
+            "ACCESS",
+            "POLICY",
+            Ref("ObjectReferenceSegment"),
+            "ON",
+            Bracketed(
+                Delimited(
+                    Ref("ObjectReferenceSegment"),
+                ),
+            ),
+        ),
+        Sequence(
+            "DROP",
+            "ROW",
+            "ACCESS",
+            "POLICY",
+            Ref("ObjectReferenceSegment"),
+            Sequence(
+                Ref("CommaSegment"),
+                "ADD",
+                "ROW",
+                "ACCESS",
+                "POLICY",
+                Ref("ObjectReferenceSegment"),
+                "ON",
+                Bracketed(
+                    Delimited(
+                        Ref("ObjectReferenceSegment"),
+                    ),
+                ),
+                optional=True,
+            ),
+        ),
+        Sequence(
+            "DROP",
+            "ALL",
+            "ROW",
+            "ACCESS",
+            "POLICIES",
+        ),
+        Sequence(
+            "SET",
+            "AGGREGATION",
+            "POLICY",
+            Ref("ObjectReferenceSegment"),
+            Sequence(
+                "ENTITY",
+                "KEY",
+                Bracketed(
+                    Delimited(
+                        Ref("ObjectReferenceSegment"),
+                    ),
+                ),
+                optional=True,
+            ),
+            Sequence(
+                "FORCE",
+                optional=True,
+            ),
+        ),
+        Sequence(
+            "UNSET",
+            "AGGREGATION",
+            "POLICY",
+        ),
+        Sequence(
+            "SET",
+            "JOIN",
+            "POLICY",
+            Ref("ObjectReferenceSegment"),
+            Sequence(
+                "FORCE",
+                optional=True,
+            ),
+        ),
+        Sequence(
+            "UNSET",
+            "JOIN",
+            "POLICY",
         ),
     )
 
@@ -2883,6 +2984,7 @@ class AccessStatementSegment(BaseSegment):
         Sequence("SESSION", "POLICY"),
         Sequence("MASKING", "POLICY"),
         Sequence("ROW", "ACCESS", "POLICY"),
+        Sequence("CORTEX", "SEARCH", "SERVICE"),
     )
 
     # We reuse the object names above and simply append an `S` to the end of them to get
@@ -5646,7 +5748,10 @@ class ParquetFileFormatTypeParameters(BaseSegment):
             OneOf(
                 "SNAPPY_COMPRESSION",
                 "BINARY_AS_TEXT",
+                "USE_LOGICAL_TYPE",
                 "TRIM_SPACE",
+                "USE_VECTORIZED_SCANNER",
+                "REPLACE_INVALID_CHARACTERS",
             ),
             Ref("EqualsSegment"),
             Ref("BooleanLiteralGrammar"),
@@ -6851,6 +6956,62 @@ class CreateStreamlitStatementSegment(BaseSegment):
             optional=True,
         ),
         Ref("CommentEqualsClauseSegment", optional=True),
+        Sequence(
+            "TITLE",
+            Ref("EqualsSegment"),
+            Ref("QuotedLiteralSegment"),
+            optional=True,
+        ),
+    )
+
+
+class CreateCortexSearchServiceStatementSegment(BaseSegment):
+    """A Snowflake `CREATE CORTEX SEARCH SERVICE` statement.
+
+    https://docs.snowflake.com/en/sql-reference/sql/create-cortex-search
+    """
+
+    type = "create_cortex_search_service_statement"
+
+    match_grammar = Sequence(
+        "CREATE",
+        Ref("OrReplaceGrammar", optional=True),
+        Sequence("CORTEX", "SEARCH", "SERVICE"),
+        Ref("IfNotExistsGrammar", optional=True),
+        Ref("ObjectReferenceSegment"),
+        Sequence(
+            "ON",
+            Ref("ColumnReferenceSegment"),
+        ),
+        Sequence(
+            "ATTRIBUTES",
+            Delimited(Ref("ColumnReferenceSegment")),
+            optional=True,
+        ),
+        Sequence(
+            "WAREHOUSE",
+            Ref("EqualsSegment"),
+            OneOf(
+                Ref("ObjectReferenceSegment"),
+                Ref("QuotedLiteralSegment"),
+            ),
+        ),
+        Sequence(
+            "TARGET_LAG",
+            Ref("EqualsSegment"),
+            Ref("DynamicTableTargetLagSegment"),
+        ),
+        Sequence(
+            "EMBEDDING_MODEL",
+            Ref("EqualsSegment"),
+            Ref("QuotedLiteralSegment"),
+            optional=True,
+        ),
+        Ref("CommentEqualsClauseSegment", optional=True),
+        Sequence(
+            "AS",
+            OptionallyBracketed(Ref("SelectableGrammar")),
+        ),
     )
 
 
@@ -6938,6 +7099,50 @@ class AlterStreamlitStatementSegment(BaseSegment):
     )
 
 
+class AlterCortexSearchServiceStatementSegment(BaseSegment):
+    """A Snowflake `ALTER CORTEX SEARCH SERVICE` statement.
+
+    https://docs.snowflake.com/en/sql-reference/sql/alter-cortex-search
+    """
+
+    type = "alter_streamlit_statement"
+
+    match_grammar = Sequence(
+        "ALTER",
+        Sequence("CORTEX", "SEARCH", "SERVICE"),
+        Ref("IfExistsGrammar", optional=True),
+        Ref("ObjectReferenceSegment"),
+        OneOf(
+            Sequence(
+                OneOf("SUSPEND", "RESUME"),
+                OneOf("INDEXING", "SERVING"),
+            ),
+            Sequence(
+                "SET",
+                AnySetOf(
+                    Sequence(
+                        "WAREHOUSE",
+                        Ref("EqualsSegment"),
+                        OneOf(
+                            Ref("ObjectReferenceSegment"),
+                            Ref("QuotedLiteralSegment"),
+                        ),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "TARGET_LAG",
+                        Ref("EqualsSegment"),
+                        Ref("DynamicTableTargetLagSegment"),
+                        optional=True,
+                    ),
+                    Ref("CommentEqualsClauseSegment", optional=True),
+                ),
+            ),
+            Sequence("RENAME", "TO", Ref("ObjectReferenceSegment")),
+        ),
+    )
+
+
 class ShowStatementSegment(BaseSegment):
     """A snowflake `SHOW` statement.
 
@@ -6988,6 +7193,7 @@ class ShowStatementSegment(BaseSegment):
         Sequence("FUTURE", "GRANTS"),
         Sequence("EXTERNAL", "VOLUMES"),
         Sequence("PASSWORD", "POLICIES"),
+        Sequence("CORTEX", "SEARCH", "SERVICES"),
     )
 
     _object_scope_types = OneOf(
@@ -7842,6 +8048,13 @@ class DescribeStatementSegment(BaseSegment):
                 "POLICY",
                 Ref("PasswordPolicyReferenceSegment"),
             ),
+            # https://docs.snowflake.com/en/sql-reference/sql/desc-cortex-search
+            Sequence(
+                "CORTEX",
+                "SEARCH",
+                "SERVICE",
+                Ref("ObjectReferenceSegment"),
+            ),
         ),
     )
 
@@ -8261,6 +8474,7 @@ class DropObjectStatementSegment(BaseSegment):
             Sequence(
                 OneOf(
                     "CONNECTION",
+                    Sequence("CORTEX", "SEARCH", "SERVICE"),
                     Sequence("FILE", "FORMAT"),
                     Sequence(
                         OneOf(
