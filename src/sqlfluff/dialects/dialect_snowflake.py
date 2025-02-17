@@ -8839,8 +8839,55 @@ class ScriptingDeclareStatementSegment(BaseSegment):
     match_grammar = Sequence(
         "DECLARE",
         Indent,
+        Sequence(
+            # Avoid BEGIN as a variable from the subsequent scripting block
+            Ref("LocalVariableNameSegment", exclude=Ref.keyword("BEGIN")),
+            OneOf(
+                # Variable assignment
+                OneOf(
+                    Sequence(
+                        Ref("DatatypeSegment"),
+                        OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
+                        Ref("ExpressionSegment"),
+                    ),
+                    Sequence(
+                        OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
+                        Ref("ExpressionSegment"),
+                    ),
+                ),
+                # Cursor assignment
+                Sequence(
+                    "CURSOR",
+                    "FOR",
+                    OneOf(Ref("LocalVariableNameSegment"), Ref("SelectableGrammar")),
+                ),
+                # Resultset assignment
+                Sequence(
+                    "RESULTSET",
+                    Sequence(
+                        OneOf(
+                            "DEFAULT",
+                            Ref("WalrusOperatorSegment"),
+                        ),
+                        Sequence("ASYNC", optional=True),
+                        Bracketed(Ref("SelectClauseSegment"), optional=True),
+                        optional=True,
+                    ),
+                ),
+                # Exception assignment
+                Sequence(
+                    "EXCEPTION",
+                    Bracketed(
+                        Delimited(
+                            Ref("ExceptionCodeSegment"), Ref("QuotedLiteralSegment")
+                        )
+                    ),
+                ),
+            ),
+        ),
         AnyNumberOf(
             Sequence(
+                Ref("DelimiterGrammar"),
                 # Avoid BEGIN as a variable from the subsequent scripting block
                 Ref("LocalVariableNameSegment", exclude=Ref.keyword("BEGIN")),
                 OneOf(
@@ -8867,8 +8914,15 @@ class ScriptingDeclareStatementSegment(BaseSegment):
                     # Resultset assignment
                     Sequence(
                         "RESULTSET",
-                        Ref("WalrusOperatorSegment"),
-                        Bracketed(Ref("SelectableGrammar")),
+                        Sequence(
+                            OneOf(
+                                "DEFAULT",
+                                Ref("WalrusOperatorSegment"),
+                            ),
+                            Sequence("ASYNC", optional=True),
+                            Bracketed(Ref("SelectClauseSegment"), optional=True),
+                            optional=True,
+                        ),
                     ),
                     # Exception assignment
                     Sequence(
@@ -8880,12 +8934,10 @@ class ScriptingDeclareStatementSegment(BaseSegment):
                         ),
                     ),
                 ),
-                Ref("DelimiterGrammar"),
             ),
-            min_times=1,
         ),
         Dedent,
-        Ref("ScriptingBlockStatementSegment"),
+        Ref("ScriptingBlockStatementSegment", optional=True),
     )
 
 
@@ -9073,7 +9125,7 @@ class CreateRowAccessPolicyStatementSegment(BaseSegment):
         "ACCESS",
         "POLICY",
         Ref("IfNotExistsGrammar", optional=True),
-        Ref("NakedIdentifierSegment"),
+        OneOf(Ref("NakedIdentifierSegment"), Ref("QuotedIdentifierSegment")),
         "AS",
         Ref("FunctionParameterListGrammar"),
         "RETURNS",
