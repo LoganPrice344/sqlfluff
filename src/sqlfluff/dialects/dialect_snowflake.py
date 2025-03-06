@@ -66,6 +66,11 @@ snowflake_dialect.patch_lexer_matchers(
             CodeSegment,
         ),
         RegexLexer(
+            "dollar_quote",
+            r"\$\$",
+            CodeSegment,
+        ),
+        RegexLexer(
             "inline_comment",
             r"(--|#|//)[^\n]*",
             CommentSegment,
@@ -83,11 +88,6 @@ snowflake_dialect.insert_lexer_matchers(
         # Column selector
         # https://docs.snowflake.com/en/sql-reference/sql/select.html#parameters
         RegexLexer("column_selector", r"\$[0-9]+", CodeSegment),
-        RegexLexer(
-            "dollar_quote",
-            r"\$\$.*\$\$",
-            CodeSegment,
-        ),
         RegexLexer(
             "dollar_literal",
             r"[$][a-zA-Z0-9_.]*",
@@ -230,6 +230,12 @@ snowflake_dialect.add(
         IdentifierSegment,
         type="quoted_star",
         trim_chars=("'",),
+    ),
+    RawDollarQuote=StringParser("$$", SymbolSegment, type="raw_dollar_quote"),
+    DollarQuoteSegment=RegexParser(
+        r"[^\s]+",
+        CodeSegment,
+        type="dollar_quote",
     ),
     # Any identifier is valid as a semi-structured element in Snowflake
     # as long as it's not a reserved keyword
@@ -375,12 +381,6 @@ snowflake_dialect.add(
         CodeSegment,
         type="udf_body",
         trim_chars=("'",),
-    ),
-    DollarQuotedUDFBody=TypedParser(
-        "dollar_quote",
-        CodeSegment,
-        type="udf_body",
-        trim_chars=("$",),
     ),
     StagePath=RegexParser(
         r"(?:@[^\s;)]+|'@[^']+')",
@@ -723,11 +723,6 @@ snowflake_dialect.replace(
         # https://docs.snowflake.com/en/sql-reference/data-types-text.html#string-constants
         TypedParser(
             "single_quote",
-            LiteralSegment,
-            type="quoted_literal",
-        ),
-        TypedParser(
-            "dollar_quote",
             LiteralSegment,
             type="quoted_literal",
         ),
@@ -1439,6 +1434,10 @@ class StatementSegment(ansi.StatementSegment):
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
             Ref("ExceptionBlockStatementSegment"),
+            Ref("TestingThisSegment"),
+            Ref("IfStatementSegment"),
+            Ref("ScriptingCaseSegment"),
+            Ref("TestDollarQuote"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -2012,6 +2011,19 @@ class SelectClauseModifierSegment(ansi.SelectClauseModifierSegment):
         # TOP N is unique to Snowflake, and we can optionally add DISTINCT/ALL in front
         # of it.
         Sequence("TOP", Ref("NumericLiteralSegment"), optional=True),
+    )
+
+
+class TestDollarQuote(BaseSegment):
+    """Non SQL Script String."""
+
+    type = "test_dollar_quote"
+    match_grammar = Sequence(
+        Ref("RawDollarQuote"),
+        AnyNumberOf(
+            Ref("DollarQuoteSegment"),
+        ),
+        Ref("RawDollarQuote"),
     )
 
 
@@ -3137,113 +3149,132 @@ class CreateProcedureStatementSegment(BaseSegment):
                 Bracketed(Delimited(Ref("ColumnDefinitionSegment"), optional=True)),
             ),
         ),
-        AnySetOf(
-            Sequence("NOT", "NULL", optional=True),
+        OneOf(
             Sequence(
+                Sequence("NOT", "NULL", optional=True),
                 "LANGUAGE",
+                "SQL",
                 OneOf(
-                    "JAVA",
-                    "JAVASCRIPT",
-                    "PYTHON",
-                    "SCALA",
-                    "SQL",
+                    Sequence("CALLED", "ON", "NULL", "INPUT"),
+                    Sequence("RETURNS", "NULL", "ON", "NULL", "INPUT"),
+                    "STRICT",
+                    optional=True,
                 ),
-                optional=True,
-            ),
-            OneOf(
-                Sequence("CALLED", "ON", "NULL", "INPUT"),
-                Sequence("RETURNS", "NULL", "ON", "NULL", "INPUT"),
-                "STRICT",
-                optional=True,
-            ),
-            OneOf("VOLATILE", "IMMUTABLE", optional=True),
-            Sequence(
-                "RUNTIME_VERSION",
-                Ref("EqualsSegment"),
-                Ref("QuotedLiteralSegment"),
-                optional=True,
-            ),
-            Ref("CommentEqualsClauseSegment", optional=True),
-            Sequence(
-                "IMPORTS",
-                Ref("EqualsSegment"),
-                Bracketed(Delimited(Ref("QuotedLiteralSegment"))),
-                optional=True,
+                OneOf("VOLATILE", "IMMUTABLE", optional=True),
+                Ref("CommentEqualsClauseSegment", optional=True),
+                Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
+                "AS",
+                Ref("TestScriptingBlockStatementSegment"),
             ),
             Sequence(
-                "SECRETS",
-                Ref("EqualsSegment"),
-                Bracketed(
+                AnySetOf(
+                    Sequence("NOT", "NULL", optional=True),
                     Sequence(
-                        Delimited(
+                        "LANGUAGE",
+                        OneOf(
+                            "JAVA",
+                            "JAVASCRIPT",
+                            "PYTHON",
+                            "SCALA",
+                        ),
+                        optional=True,
+                    ),
+                    OneOf(
+                        Sequence("CALLED", "ON", "NULL", "INPUT"),
+                        Sequence("RETURNS", "NULL", "ON", "NULL", "INPUT"),
+                        "STRICT",
+                        optional=True,
+                    ),
+                    OneOf("VOLATILE", "IMMUTABLE", optional=True),
+                    Sequence(
+                        "RUNTIME_VERSION",
+                        Ref("EqualsSegment"),
+                        Ref("QuotedLiteralSegment"),
+                        optional=True,
+                    ),
+                    Ref("CommentEqualsClauseSegment", optional=True),
+                    Sequence(
+                        "IMPORTS",
+                        Ref("EqualsSegment"),
+                        Bracketed(Delimited(Ref("QuotedLiteralSegment"))),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "SECRETS",
+                        Ref("EqualsSegment"),
+                        Bracketed(
                             Sequence(
-                                Ref("QuotedLiteralSegment"),
-                                Ref("EqualsSegment"),
-                                AnyNumberOf(
+                                Delimited(
                                     Sequence(
+                                        Ref("QuotedLiteralSegment"),
+                                        Ref("EqualsSegment"),
+                                        AnyNumberOf(
+                                            Sequence(
+                                                Ref("SingleIdentifierGrammar"),
+                                                Ref("DotSegment"),
+                                                optional=True,
+                                            ),
+                                        ),
                                         Ref("SingleIdentifierGrammar"),
-                                        Ref("DotSegment"),
-                                        optional=True,
-                                    ),
-                                ),
-                                Ref("SingleIdentifierGrammar"),
-                            )
-                        )
-                    )
-                ),
-                optional=True,
-            ),
-            Sequence(
-                "EXTERNAL_ACCESS_INTEGRATIONS",
-                Ref("EqualsSegment"),
-                Bracketed(
-                    Delimited(
-                        Sequence(
-                            AnyNumberOf(
-                                Sequence(
-                                    Ref("SingleIdentifierGrammar"),
-                                    Ref("DotSegment"),
-                                    optional=True,
+                                    )
                                 )
-                            ),
-                            Ref("SingleIdentifierGrammar"),
-                        )
-                    )
+                            )
+                        ),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "EXTERNAL_ACCESS_INTEGRATIONS",
+                        Ref("EqualsSegment"),
+                        Bracketed(
+                            Delimited(
+                                Sequence(
+                                    AnyNumberOf(
+                                        Sequence(
+                                            Ref("SingleIdentifierGrammar"),
+                                            Ref("DotSegment"),
+                                            optional=True,
+                                        )
+                                    ),
+                                    Ref("SingleIdentifierGrammar"),
+                                )
+                            )
+                        ),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "PACKAGES",
+                        Ref("EqualsSegment"),
+                        Bracketed(Delimited(Ref("QuotedLiteralSegment"))),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "HANDLER",
+                        Ref("EqualsSegment"),
+                        Ref("QuotedLiteralSegment"),
+                        optional=True,
+                    ),
+                    Sequence(
+                        "TARGET_PATH",
+                        Ref("EqualsSegment"),
+                        Ref("QuotedLiteralSegment"),
+                        optional=True,
+                    ),
+                    Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
+                    optional=True,
                 ),
-                optional=True,
+                Sequence(
+                    "AS",
+                    OneOf(
+                        # Either a foreign programming language UDF...
+                        Ref("DoubleQuotedUDFBody"),
+                        Ref("SingleQuotedUDFBody"),
+                        Ref("DollarQuoteSegment"),
+                        # ...or a SQL UDF
+                        Ref("ScriptingBlockStatementSegment"),
+                    ),
+                    optional=True,
+                ),
             ),
-            Sequence(
-                "PACKAGES",
-                Ref("EqualsSegment"),
-                Bracketed(Delimited(Ref("QuotedLiteralSegment"))),
-                optional=True,
-            ),
-            Sequence(
-                "HANDLER",
-                Ref("EqualsSegment"),
-                Ref("QuotedLiteralSegment"),
-                optional=True,
-            ),
-            Sequence(
-                "TARGET_PATH",
-                Ref("EqualsSegment"),
-                Ref("QuotedLiteralSegment"),
-                optional=True,
-            ),
-            Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
-            optional=True,
-        ),
-        Sequence(
-            "AS",
-            OneOf(
-                # Either a foreign programming language UDF...
-                Ref("DoubleQuotedUDFBody"),
-                Ref("SingleQuotedUDFBody"),
-                Ref("DollarQuotedUDFBody"),
-                # ...or a SQL UDF
-                Ref("ScriptingBlockStatementSegment"),
-            ),
-            optional=True,
         ),
     )
 
@@ -3397,6 +3428,18 @@ class ReturnStatementSegment(BaseSegment):
     )
 
 
+class TestScriptingBlockStatementSegment(BaseSegment):
+    """Delete this."""
+
+    type = "test_block_statement"
+
+    match_grammar = Sequence(
+        Ref("RawDollarQuote", optional=True),
+        Ref("ScriptingBlockStatementSegment"),
+        Ref("RawDollarQuote", optional=True),
+    )
+
+
 class ScriptingBlockStatementSegment(BaseSegment):
     """A snowflake `BEGIN ... END` statement for SQL scripting.
 
@@ -3408,12 +3451,12 @@ class ScriptingBlockStatementSegment(BaseSegment):
         Sequence(
             "BEGIN",
             Indent,
-            Ref("StatementSegment"),
+            Ref("ScriptingStatementSegment"),
         ),
         AnyNumberOf(
             Sequence(
                 Ref("DelimiterGrammar"),
-                Ref("StatementSegment"),
+                Ref("ScriptingStatementSegment"),
             ),
             terminators=[
                 OneOf(
@@ -3596,7 +3639,7 @@ class CreateFunctionStatementSegment(BaseSegment):
                 # Either a foreign programming language UDF...
                 Ref("DoubleQuotedUDFBody"),
                 Ref("SingleQuotedUDFBody"),
-                Ref("DollarQuotedUDFBody"),
+                Ref("DollarQuoteSegment"),
                 # ...or a SQL UDF
                 Ref("ScriptingBlockStatementSegment"),
             ),
@@ -9132,4 +9175,309 @@ class ExceptionBlockStatementSegment(BaseSegment):
                 Ref("StatementSegment"),
             ),
         ),
+    )
+
+
+class ScriptingStatementSegment(ansi.StatementSegment):
+    """A generic segment, to any of its child subsegments."""
+
+    match_grammar = ansi.StatementSegment.match_grammar.copy(
+        # NOTE: The Scripting Block segment must be tried before
+        # we get to the transaction statement (from the ansi dialect)
+        # because they both start with BEGIN.
+        insert=[
+            Ref("ScriptingBlockStatementSegment"),
+        ],
+        before=Ref("TransactionStatementSegment"),
+    ).copy(
+        insert=[
+            Ref("AccessStatementSegment"),
+            Ref("CreateStatementSegment"),
+            Ref("CreateTaskSegment"),
+            Ref("CreateUserSegment"),
+            Ref("CreateCloneStatementSegment"),
+            Ref("CreateProcedureStatementSegment"),
+            Ref("AlterProcedureStatementSegment"),
+            Ref("ScriptingLetStatementSegment"),
+            Ref("ScriptingDeclareStatementSegment"),
+            Ref("ReturnStatementSegment"),
+            Ref("ShowStatementSegment"),
+            Ref("AlterAccountStatementSegment"),
+            Ref("AlterUserStatementSegment"),
+            Ref("AlterSessionStatementSegment"),
+            Ref("AlterTaskStatementSegment"),
+            Ref("SetAssignmentStatementSegment"),
+            Ref("CallStoredProcedureSegment"),
+            Ref("MergeStatementSegment"),
+            Ref("CopyIntoTableStatementSegment"),
+            Ref("CopyIntoLocationStatementSegment"),
+            Ref("CopyFilesIntoLocationStatementSegment"),
+            Ref("FormatTypeOptions"),
+            Ref("AlterWarehouseStatementSegment"),
+            Ref("AlterShareStatementSegment"),
+            Ref("CreateExternalTableSegment"),
+            Ref("AlterExternalTableStatementSegment"),
+            Ref("CreateSchemaStatementSegment"),
+            Ref("AlterSchemaStatementSegment"),
+            Ref("CreateFunctionStatementSegment"),
+            Ref("AlterFunctionStatementSegment"),
+            Ref("CreateExternalFunctionStatementSegment"),
+            Ref("CreateStageSegment"),
+            Ref("AlterStageSegment"),
+            Ref("CreateStreamStatementSegment"),
+            Ref("CreateStreamlitStatementSegment"),
+            Ref("CreateCortexSearchServiceStatementSegment"),
+            Ref("AlterStreamStatementSegment"),
+            Ref("AlterStreamlitStatementSegment"),
+            Ref("AlterCortexSearchServiceStatementSegment"),
+            Ref("UnsetStatementSegment"),
+            Ref("UndropStatementSegment"),
+            Ref("CommentStatementSegment"),
+            Ref("CallStatementSegment"),
+            Ref("AlterViewStatementSegment"),
+            Ref("AlterMaterializedViewStatementSegment"),
+            Ref("DropProcedureStatementSegment"),
+            Ref("DropExternalTableStatementSegment"),
+            Ref("DropMaterializedViewStatementSegment"),
+            Ref("DropObjectStatementSegment"),
+            Ref("CreateFileFormatSegment"),
+            Ref("AlterFileFormatSegment"),
+            Ref("AlterPipeSegment"),
+            Ref("ListStatementSegment"),
+            Ref("GetStatementSegment"),
+            Ref("PutStatementSegment"),
+            Ref("RemoveStatementSegment"),
+            Ref("CreateDatabaseFromShareStatementSegment"),
+            Ref("CreateDatabaseRoleStatementSegment"),
+            Ref("AlterRoleStatementSegment"),
+            Ref("AlterStorageIntegrationSegment"),
+            Ref("ExecuteImmediateClauseSegment"),
+            Ref("ExecuteTaskClauseSegment"),
+            Ref("CreateResourceMonitorStatementSegment"),
+            Ref("AlterResourceMonitorStatementSegment"),
+            Ref("CreateSequenceStatementSegment"),
+            Ref("AlterSequenceStatementSegment"),
+            Ref("AlterDatabaseSegment"),
+            Ref("AlterMaskingPolicySegment"),
+            Ref("AlterNetworkPolicyStatementSegment"),
+            Ref("CreateExternalVolumeStatementSegment"),
+            Ref("DropExternalVolumeStatementSegment"),
+            Ref("AlterExternalVolumeStatementSegment"),
+            Ref("ForInLoopSegment"),
+            Ref("CreateEventTableStatementSegment"),
+            Ref("CreatePasswordPolicyStatementSegment"),
+            Ref("AlterPasswordPolicyStatementSegment"),
+            Ref("DropPasswordPolicyStatementSegment"),
+            Ref("CreateRowAccessPolicyStatementSegment"),
+            Ref("AlterRowAccessPolicyStatmentSegment"),
+            Ref("AlterTagStatementSegment"),
+            Ref("ScriptExceptionBlockStatementSegment"),
+            Ref("OnlyScripting"),
+            Ref("LoopStatementSegment"),
+        ],
+        remove=[
+            Ref("CreateIndexStatementSegment"),
+            Ref("DropIndexStatementSegment"),
+        ],
+    )
+
+
+class ScriptExceptionBlockStatementSegment(ExceptionBlockStatementSegment):
+    """A snowflake `BEGIN ... END` statement for SQL scripting.
+
+    https://docs.snowflake.com/en/sql-reference/snowflake-scripting/begin
+    """
+
+    type = "script_exception_block_statement"
+
+    match_grammar = Sequence(
+        Sequence(
+            "EXCEPTION",
+            Indent,
+            OneOf(
+                Sequence(
+                    "WHEN",
+                    Ref("ObjectReferenceSegment"),
+                    AnyNumberOf(
+                        Sequence(
+                            "OR",
+                            Ref("ObjectReferenceSegment"),
+                        ),
+                    ),
+                    "THEN",
+                ),
+                Sequence(
+                    "WHEN",
+                    "OTHER",
+                    "THEN",
+                ),
+            ),
+            Ref("ScriptingStatementSegment"),
+        ),
+        AnyNumberOf(
+            Sequence(
+                Ref("DelimiterGrammar"),
+                OneOf(
+                    Sequence(
+                        "WHEN",
+                        Ref("ObjectReferenceSegment"),
+                        AnyNumberOf(
+                            Sequence(
+                                "OR",
+                                Ref("ObjectReferenceSegment"),
+                            ),
+                        ),
+                        "THEN",
+                    ),
+                    Sequence(
+                        "WHEN",
+                        "OTHER",
+                        "THEN",
+                    ),
+                ),
+                Ref("ScriptingStatementSegment"),
+            ),
+        ),
+    )
+
+
+class TestingThisSegment(BaseSegment):
+    """Delete this later."""
+
+    type = "testing_exception_block_statement"
+
+    match_grammar = Sequence(
+        "TEST",
+        Ref("ScriptExceptionBlockStatementSegment"),
+    )
+
+
+class OnlyScripting(BaseSegment):
+    """Delete this."""
+
+    type = "only_scripting"
+
+    match_grammar = Sequence("AHHH")
+
+
+class LoopStatementSegment(BaseSegment):
+    """Loop statement segment."""
+
+    type = "loop_statement_segment"
+
+    match_grammar = Sequence(
+        "LOOP",
+        AnyNumberOf(
+            Ref("ScriptingStatementSegment"),
+            Ref("DelimiterGrammar"),
+            min_times=1,
+        ),
+        "END",
+        "LOOP",
+        Ref("LocalVariableNameSegment"),
+    )
+
+
+class IfStatementSegment(BaseSegment):
+    """If statement Segment."""
+
+    type = "if_statement"
+
+    match_grammar = Sequence(
+        "IF",
+        Bracketed(
+            Ref("LocalVariableNameSegment"),
+            OneOf(
+                Ref("RawEqualsSegment"),
+                Ref("RawNotSegment"),
+                Ref("RawGreaterThanSegment"),
+                Ref("RawLessThanSegment"),
+            ),
+            Ref("LocalVariableNameSegment"),
+        ),
+        "THEN",
+        AnyNumberOf(
+            Sequence(
+                Ref("StatementSegment"),
+                Ref("DelimiterGrammar"),
+            ),
+            min_times=1,
+        ),
+        Sequence(
+            "ELSEIF",
+            Bracketed(
+                Ref("LocalVariableNameSegment"),
+                OneOf(
+                    Ref("RawEqualsSegment"),
+                    Ref("RawNotSegment"),
+                    Ref("RawGreaterThanSegment"),
+                    Ref("RawLessThanSegment"),
+                ),
+                Ref("LocalVariableNameSegment"),
+            ),
+            "THEN",
+            AnyNumberOf(
+                Sequence(
+                    Ref("StatementSegment"),
+                    Ref("DelimiterGrammar"),
+                ),
+                min_times=1,
+            ),
+            optional=True,
+        ),
+        Sequence(
+            "ELSE",
+            AnyNumberOf(
+                Sequence(
+                    Ref("StatementSegment"),
+                    Ref("DelimiterGrammar"),
+                ),
+                min_times=1,
+            ),
+            optional=True,
+        ),
+        "END",
+        "IF",
+    )
+
+
+class ScriptingCaseSegment(BaseSegment):
+    """Scripting case segment."""
+
+    type = "case_segment"
+
+    match_grammar = Sequence(
+        "CASE",
+        AnyNumberOf(
+            Sequence(
+                "WHEN",
+                OneOf(
+                    Ref("LocalVariableNameSegment"),
+                    Ref("ExpressionSegment"),
+                ),
+                OneOf(
+                    Ref("RawEqualsSegment"),
+                    Ref("RawNotSegment"),
+                    Ref("RawGreaterThanSegment"),
+                    Ref("RawLessThanSegment"),
+                ),
+                OneOf(
+                    Ref("LocalVariableNameSegment"),
+                    Ref("ExpressionSegment"),
+                ),
+                "THEN",
+            ),
+        ),
+        Sequence(
+            "ELSE",
+            AnyNumberOf(
+                Sequence(
+                    Ref("StatementSegment"),
+                    Ref("DelimiterGrammar"),
+                ),
+                min_times=1,
+            ),
+            optional=True,
+        ),
+        "END",
     )
