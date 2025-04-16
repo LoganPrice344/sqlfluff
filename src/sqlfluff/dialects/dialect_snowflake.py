@@ -13,6 +13,7 @@ from sqlfluff.core.parser import (
     BaseSegment,
     Bracketed,
     CodeSegment,
+    WordSegment,
     CommentSegment,
     Dedent,
     Delimited,
@@ -233,9 +234,9 @@ snowflake_dialect.add(
     ),
     RawDollarQuote=StringParser("$$", SymbolSegment, type="raw_dollar_quote"),
     DollarQuoteSegment=RegexParser(
-        r"[^\s]+",
+        r"[^(\$(?!\$))]+",
         CodeSegment,
-        type="dollar_quote",
+        type="dollar_quote_segment",
     ),
     # Any identifier is valid as a semi-structured element in Snowflake
     # as long as it's not a reserved keyword
@@ -1361,7 +1362,6 @@ class StatementSegment(ansi.StatementSegment):
             Ref("CreateProcedureStatementSegment"),
             Ref("AlterProcedureStatementSegment"),
             Ref("ScriptingLetStatementSegment"),
-            Ref("ScriptingDeclareStatementSegment"),
             Ref("ReturnStatementSegment"),
             Ref("ShowStatementSegment"),
             Ref("AlterAccountStatementSegment"),
@@ -1433,11 +1433,24 @@ class StatementSegment(ansi.StatementSegment):
             Ref("CreateRowAccessPolicyStatementSegment"),
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
+            Ref("SimpleCaseSegment"),
+            Ref("ScriptExceptionBlockStatementSegment"),
+            Ref("LoopStatementSegment"),
             Ref("ExceptionBlockStatementSegment"),
-            Ref("TestingThisSegment"),
             Ref("IfStatementSegment"),
-            Ref("ScriptingCaseSegment"),
-            Ref("TestDollarQuote"),
+            Ref("SimpleCaseSegment"),
+            Ref("ScriptingWhileSegment"),
+            Ref("ScriptingRepeatSegment"),
+            Ref("AwaitSegment"),
+            Ref("CancelSegment"),
+            Ref("CloseSegment"),
+            Ref("ContinueSegment"),
+            Ref("FetchSegment"),
+            Ref("NullSegment"),
+            Ref("OpenSegment"),
+            Ref("RaiseSegment"),
+            Ref("ReturnSegment"),
+            Ref("SearchedCaseSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -2021,7 +2034,7 @@ class TestDollarQuote(BaseSegment):
     match_grammar = Sequence(
         Ref("RawDollarQuote"),
         AnyNumberOf(
-            Ref("DollarQuoteSegment"),
+            Ref("DollarQuoteSegment"), terminators=["$$"], reset_terminators=True
         ),
         Ref("RawDollarQuote"),
     )
@@ -3164,7 +3177,25 @@ class CreateProcedureStatementSegment(BaseSegment):
                 Ref("CommentEqualsClauseSegment", optional=True),
                 Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
                 "AS",
-                Ref("TestScriptingBlockStatementSegment"),
+                OneOf(
+                    Sequence(
+                        Ref("ScriptingDeclareStatementSegment", optional=True),
+                        Ref("ScriptingBlockStatementSegment"),
+                        Sequence(
+                            Ref("DelimiterGrammar"),
+                            Ref("ScriptExceptionBlockStatementSegment"),
+                            optional=True,
+                        ),
+                    ),
+                    Sequence(
+                        Ref("RawDollarQuote"),
+                        Ref("ScriptingDeclareStatementSegment", optional=True),
+                        Ref("ScriptingBlockStatementSegment"),
+                        Ref("DelimiterGrammar"),
+                        Ref("ScriptExceptionBlockStatementSegment", optional=True),
+                        Ref("RawDollarQuote"),
+                    ),
+                ),
             ),
             Sequence(
                 AnySetOf(
@@ -3268,9 +3299,7 @@ class CreateProcedureStatementSegment(BaseSegment):
                         # Either a foreign programming language UDF...
                         Ref("DoubleQuotedUDFBody"),
                         Ref("SingleQuotedUDFBody"),
-                        Ref("DollarQuoteSegment"),
-                        # ...or a SQL UDF
-                        Ref("ScriptingBlockStatementSegment"),
+                        Ref("TestDollarQuote"),
                     ),
                     optional=True,
                 ),
@@ -3425,18 +3454,6 @@ class ReturnStatementSegment(BaseSegment):
     match_grammar = Sequence(
         "RETURN",
         Ref("ExpressionSegment"),
-    )
-
-
-class TestScriptingBlockStatementSegment(BaseSegment):
-    """Delete this."""
-
-    type = "test_block_statement"
-
-    match_grammar = Sequence(
-        Ref("RawDollarQuote", optional=True),
-        Ref("ScriptingBlockStatementSegment"),
-        Ref("RawDollarQuote", optional=True),
     )
 
 
@@ -7724,6 +7741,23 @@ class ExecuteImmediateClauseSegment(BaseSegment):
                 Ref("ColonSegment"),
                 Ref("LocalVariableNameSegment"),
             ),
+            Sequence(
+                Ref("ScriptingDeclareStatementSegment", optional=True),
+                Ref("ScriptingBlockStatementSegment"),
+                Sequence(
+                    Ref("DelimiterGrammar"),
+                    Ref("ScriptExceptionBlockStatementSegment"),
+                    optional=True,
+                ),
+            ),
+            Sequence(
+                Ref("RawDollarQuote"),
+                Ref("ScriptingDeclareStatementSegment", optional=True),
+                Ref("ScriptingBlockStatementSegment"),
+                Ref("DelimiterGrammar"),
+                Ref("ScriptExceptionBlockStatementSegment", optional=True),
+                Ref("RawDollarQuote"),
+            ),
         ),
         Sequence(
             "USING",
@@ -8746,7 +8780,10 @@ class ForInLoopSegment(BaseSegment):
                 Indent,
             ),
             Delimited(
-                Ref("StatementSegment"),
+                OneOf(
+                    Ref("ScriptingStatementSegment"),
+                    Ref("BreakSegment"),
+                ),
                 delimiter=Ref("DelimiterGrammar"),
             ),
             parse_mode=ParseMode.GREEDY_ONCE_STARTED,
@@ -8799,6 +8836,7 @@ class ScriptingDeclareStatementSegment(BaseSegment):
                             OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
                             Ref("ExpressionSegment"),
                         ),
+                        Ref("FunctionParameterGrammar"),
                     ),
                     # Cursor assignment
                     Sequence(
@@ -8828,8 +8866,6 @@ class ScriptingDeclareStatementSegment(BaseSegment):
             ),
             min_times=1,
         ),
-        Dedent,
-        Ref("ScriptingBlockStatementSegment"),
     )
 
 
@@ -9272,8 +9308,22 @@ class ScriptingStatementSegment(ansi.StatementSegment):
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
             Ref("ScriptExceptionBlockStatementSegment"),
-            Ref("OnlyScripting"),
             Ref("LoopStatementSegment"),
+            Ref("ExceptionBlockStatementSegment"),
+            Ref("IfStatementSegment"),
+            Ref("SimpleCaseSegment"),
+            Ref("ScriptingWhileSegment"),
+            Ref("ScriptingRepeatSegment"),
+            Ref("AwaitSegment"),
+            Ref("CancelSegment"),
+            Ref("CloseSegment"),
+            Ref("ContinueSegment"),
+            Ref("FetchSegment"),
+            Ref("NullSegment"),
+            Ref("OpenSegment"),
+            Ref("RaiseSegment"),
+            Ref("ReturnSegment"),
+            Ref("SearchedCaseSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -9341,25 +9391,6 @@ class ScriptExceptionBlockStatementSegment(ExceptionBlockStatementSegment):
     )
 
 
-class TestingThisSegment(BaseSegment):
-    """Delete this later."""
-
-    type = "testing_exception_block_statement"
-
-    match_grammar = Sequence(
-        "TEST",
-        Ref("ScriptExceptionBlockStatementSegment"),
-    )
-
-
-class OnlyScripting(BaseSegment):
-    """Delete this."""
-
-    type = "only_scripting"
-
-    match_grammar = Sequence("AHHH")
-
-
 class LoopStatementSegment(BaseSegment):
     """Loop statement segment."""
 
@@ -9374,7 +9405,7 @@ class LoopStatementSegment(BaseSegment):
         ),
         "END",
         "LOOP",
-        Ref("LocalVariableNameSegment"),
+        Ref("LocalVariableNameSegment", optional=True),
     )
 
 
@@ -9386,19 +9417,15 @@ class IfStatementSegment(BaseSegment):
     match_grammar = Sequence(
         "IF",
         Bracketed(
-            Ref("LocalVariableNameSegment"),
-            OneOf(
-                Ref("RawEqualsSegment"),
-                Ref("RawNotSegment"),
-                Ref("RawGreaterThanSegment"),
-                Ref("RawLessThanSegment"),
-            ),
-            Ref("LocalVariableNameSegment"),
+            Ref("ExpressionSegment"),
         ),
         "THEN",
         AnyNumberOf(
             Sequence(
-                Ref("StatementSegment"),
+                OneOf(
+                    Ref("StatementSegment"),
+                    Ref("BreakSegment"),
+                ),
                 Ref("DelimiterGrammar"),
             ),
             min_times=1,
@@ -9406,19 +9433,15 @@ class IfStatementSegment(BaseSegment):
         Sequence(
             "ELSEIF",
             Bracketed(
-                Ref("LocalVariableNameSegment"),
-                OneOf(
-                    Ref("RawEqualsSegment"),
-                    Ref("RawNotSegment"),
-                    Ref("RawGreaterThanSegment"),
-                    Ref("RawLessThanSegment"),
-                ),
-                Ref("LocalVariableNameSegment"),
+                Ref("ExpressionSegment"),
             ),
             "THEN",
             AnyNumberOf(
                 Sequence(
-                    Ref("StatementSegment"),
+                    OneOf(
+                        Ref("StatementSegment"),
+                        Ref("BreakSegment"),
+                    ),
                     Ref("DelimiterGrammar"),
                 ),
                 min_times=1,
@@ -9441,38 +9464,73 @@ class IfStatementSegment(BaseSegment):
     )
 
 
-class ScriptingCaseSegment(BaseSegment):
-    """Scripting case segment."""
-
-    type = "case_segment"
-
+class TestCase(BaseSegment):
+    type = "test_case"
     match_grammar = Sequence(
         "CASE",
+        Bracketed(
+            Ref("LocalVariableNameSegment"),
+        ),
+    )
+
+
+class TestWhen(BaseSegment):
+    type = "test_when"
+    match_grammar = Sequence(
         AnyNumberOf(
             Sequence(
                 "WHEN",
                 OneOf(
-                    Ref("LocalVariableNameSegment"),
-                    Ref("ExpressionSegment"),
-                ),
-                OneOf(
-                    Ref("RawEqualsSegment"),
-                    Ref("RawNotSegment"),
-                    Ref("RawGreaterThanSegment"),
-                    Ref("RawLessThanSegment"),
-                ),
-                OneOf(
-                    Ref("LocalVariableNameSegment"),
-                    Ref("ExpressionSegment"),
+                    Ref("LiteralGrammar"),
                 ),
                 "THEN",
+                AnyNumberOf(
+                    Ref("ScriptingStatementSegment"),
+                ),
+            ),
+        ),
+        Sequence(
+            "ELSE",
+            AnyNumberOf(
+                Ref("ScriptingStatementSegment"),
+                min_times=1,
+            ),
+            optional=True,
+        ),
+    )
+
+
+class SimpleCaseSegment(BaseSegment):
+    """Simple case segment."""
+
+    type = "simple_case_segment"
+
+    match_grammar = Sequence(
+        "CASE",
+        Bracketed(
+            Ref("LocalVariableNameSegment"),
+        ),
+        AnyNumberOf(
+            Sequence(
+                "WHEN",
+                OneOf(
+                    Ref("LiteralGrammar"),
+                ),
+                "THEN",
+                AnyNumberOf(
+                    Sequence(
+                        Ref("ScriptingStatementSegment"),
+                        Ref("DelimiterGrammar"),
+                    ),
+                    min_times=1,
+                ),
             ),
         ),
         Sequence(
             "ELSE",
             AnyNumberOf(
                 Sequence(
-                    Ref("StatementSegment"),
+                    Ref("ScriptingStatementSegment"),
                     Ref("DelimiterGrammar"),
                 ),
                 min_times=1,
@@ -9480,4 +9538,196 @@ class ScriptingCaseSegment(BaseSegment):
             optional=True,
         ),
         "END",
+        Sequence(
+            "CASE",
+            optional=True,
+        ),
+    )
+
+
+class SearchedCaseSegment(BaseSegment):
+    """Searched case segment."""
+
+    type = "searched_case_segment"
+
+    match_grammar = Sequence(
+        "CASE",
+        AnyNumberOf(
+            Sequence(
+                "WHEN",
+                Ref("ExpressionSegment"),
+                "THEN",
+                AnyNumberOf(
+                    Sequence(
+                        Ref("ScriptingStatementSegment"),
+                        Ref("DelimiterGrammar"),
+                    ),
+                    min_times=1,
+                ),
+            ),
+        ),
+        Sequence(
+            "ELSE",
+            AnyNumberOf(
+                Sequence(
+                    Ref("ScriptingStatementSegment"),
+                    Ref("DelimiterGrammar"),
+                ),
+                min_times=1,
+            ),
+            optional=True,
+        ),
+        "END",
+        Sequence(
+            "CASE",
+            optional=True,
+        ),
+    )
+
+
+class ScriptingWhileSegment(BaseSegment):
+    type = "while_segment"
+    match_grammar = Sequence(
+        "WHILE",
+        Bracketed(
+            Ref("ExpressionSegment"),
+        ),
+        OneOf(
+            "LOOP",
+            "DO",
+            optional=True,
+        ),
+        AnyNumberOf(
+            OneOf(
+                Ref("ScriptingStatementSegment"),
+                Ref("BreakSegment"),
+            ),
+            Ref("DelimiterGrammar"),
+            min_times=1,
+        ),
+        "END",
+        OneOf("WHILE", "LOOP", optional=True),
+        Ref("TableReferenceSegment", optional=True),
+    )
+
+
+class ScriptingRepeatSegment(BaseSegment):
+    type = "repeat_segment"
+    match_grammar = Sequence(
+        "REPEAT",
+        AnyNumberOf(
+            OneOf(
+                Ref("ScriptingStatementSegment"),
+                Ref("BreakSegment"),
+            ),
+            Ref("DelimiterGrammar"),
+            min_times=1,
+        ),
+        "UNTIL",
+        Bracketed(
+            Ref("ExpressionSegment"),
+        ),
+        "END",
+        "REPEAT",
+        Ref("TableReferenceSegment", optional=True),
+    )
+
+
+class AwaitSegment(BaseSegment):
+    type = "await_segment"
+    match_grammar = Sequence(
+        "AWAIT",
+        OneOf("ALL", Ref("ObjectReferenceSegment")),
+    )
+
+
+class BreakSegment(BaseSegment):
+    type = "break_segment"
+    match_grammar = Sequence(
+        OneOf(
+            "BREAK",
+            "EXIT",
+        ),
+        Ref("ObjectReferenceSegment", optional=True),
+    )
+
+
+class CancelSegment(BaseSegment):
+    type = "cancel_segment"
+    match_grammar = Sequence(
+        "CANCEL",
+        Ref("ObjectReferenceSegment"),
+    )
+
+
+class CloseSegment(BaseSegment):
+    type = "close_segment"
+    match_grammar = Sequence(
+        "CLOSE",
+        Ref("ObjectReferenceSegment"),
+    )
+
+
+class ContinueSegment(BaseSegment):
+    type = "continue_segment"
+    match_grammar = Sequence(
+        OneOf(
+            "CONTINUE",
+            "ITERATE",
+        ),
+        Ref("TableReferenceSegment", optional=True),
+    )
+
+
+class FetchSegment(BaseSegment):
+    type = "fetch_segment"
+    match_grammar = Sequence(
+        "FETCH",
+        Ref("TableReferenceSegment"),
+        "INTO",
+        Delimited(Ref("TableExpressionSegment"), optional=True),
+    )
+
+
+class NullSegment(BaseSegment):
+    type = "null_segment"
+    match_grammar = Sequence("NULL")
+
+
+class OpenSegment(BaseSegment):
+    type = "open_segment"
+    match_grammar = Sequence(
+        "OPEN",
+        Ref("LocalVariableNameSegment"),
+        Sequence(
+            "USING",
+            Bracketed(
+                Delimited(
+                    Ref("LocalVariableNameSegment"),
+                ),
+            ),
+            optional=True,
+        ),
+    )
+
+
+class RaiseSegment(BaseSegment):
+    type = "raise_segment"
+    match_grammar = Sequence(
+        "RAISE",
+        Ref("LocalVariableNameSegment"),
+    )
+
+
+class ReturnSegment(BaseSegment):
+    type = "return_segment"
+    match_grammar = Sequence(
+        "RETURNS",
+        OneOf(
+            Ref("DatatypeSegment"),
+            Sequence(
+                "TABLE",
+                Bracketed(Delimited(Ref("ColumnDefinitionSegment"), optional=True)),
+            ),
+        ),
     )

@@ -845,6 +845,7 @@ class Lexer:
     def lex_match(forward_string: str, lexer_matchers: List[StringLexer]) -> LexMatch:
         """Iteratively match strings using the selection of submatchers."""
         elem_buff: List[LexedElement] = []
+        # breakpoint()
         while True:
             if len(forward_string) == 0:
                 return LexMatch(forward_string, elem_buff)
