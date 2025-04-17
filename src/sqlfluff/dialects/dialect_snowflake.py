@@ -13,7 +13,6 @@ from sqlfluff.core.parser import (
     BaseSegment,
     Bracketed,
     CodeSegment,
-    WordSegment,
     CommentSegment,
     Dedent,
     Delimited,
@@ -1434,7 +1433,6 @@ class StatementSegment(ansi.StatementSegment):
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
             Ref("SimpleCaseSegment"),
-            Ref("ScriptExceptionBlockStatementSegment"),
             Ref("LoopStatementSegment"),
             Ref("ExceptionBlockStatementSegment"),
             Ref("IfStatementSegment"),
@@ -3181,18 +3179,12 @@ class CreateProcedureStatementSegment(BaseSegment):
                     Sequence(
                         Ref("ScriptingDeclareStatementSegment", optional=True),
                         Ref("ScriptingBlockStatementSegment"),
-                        Sequence(
-                            Ref("DelimiterGrammar"),
-                            Ref("ScriptExceptionBlockStatementSegment"),
-                            optional=True,
-                        ),
                     ),
                     Sequence(
                         Ref("RawDollarQuote"),
                         Ref("ScriptingDeclareStatementSegment", optional=True),
                         Ref("ScriptingBlockStatementSegment"),
                         Ref("DelimiterGrammar"),
-                        Ref("ScriptExceptionBlockStatementSegment", optional=True),
                         Ref("RawDollarQuote"),
                     ),
                 ),
@@ -7744,18 +7736,12 @@ class ExecuteImmediateClauseSegment(BaseSegment):
             Sequence(
                 Ref("ScriptingDeclareStatementSegment", optional=True),
                 Ref("ScriptingBlockStatementSegment"),
-                Sequence(
-                    Ref("DelimiterGrammar"),
-                    Ref("ScriptExceptionBlockStatementSegment"),
-                    optional=True,
-                ),
             ),
             Sequence(
                 Ref("RawDollarQuote"),
                 Ref("ScriptingDeclareStatementSegment", optional=True),
                 Ref("ScriptingBlockStatementSegment"),
                 Ref("DelimiterGrammar"),
-                Ref("ScriptExceptionBlockStatementSegment", optional=True),
                 Ref("RawDollarQuote"),
             ),
         ),
@@ -9156,9 +9142,9 @@ class AlterTagStatementSegment(BaseSegment):
 
 
 class ExceptionBlockStatementSegment(BaseSegment):
-    """A snowflake `BEGIN ... END` statement for SQL scripting.
+    """A snowflake `EXCEPTION` statement for SQL scripting.
 
-    https://docs.snowflake.com/en/sql-reference/snowflake-scripting/begin
+    https://docs.snowflake.com/en/developer-guide/snowflake-scripting/exceptions
     """
 
     type = "exception_block_statement"
@@ -9307,7 +9293,6 @@ class ScriptingStatementSegment(ansi.StatementSegment):
             Ref("CreateRowAccessPolicyStatementSegment"),
             Ref("AlterRowAccessPolicyStatmentSegment"),
             Ref("AlterTagStatementSegment"),
-            Ref("ScriptExceptionBlockStatementSegment"),
             Ref("LoopStatementSegment"),
             Ref("ExceptionBlockStatementSegment"),
             Ref("IfStatementSegment"),
@@ -9331,64 +9316,6 @@ class ScriptingStatementSegment(ansi.StatementSegment):
         ],
     )
 
-
-class ScriptExceptionBlockStatementSegment(ExceptionBlockStatementSegment):
-    """A snowflake `BEGIN ... END` statement for SQL scripting.
-
-    https://docs.snowflake.com/en/sql-reference/snowflake-scripting/begin
-    """
-
-    type = "script_exception_block_statement"
-
-    match_grammar = Sequence(
-        Sequence(
-            "EXCEPTION",
-            Indent,
-            OneOf(
-                Sequence(
-                    "WHEN",
-                    Ref("ObjectReferenceSegment"),
-                    AnyNumberOf(
-                        Sequence(
-                            "OR",
-                            Ref("ObjectReferenceSegment"),
-                        ),
-                    ),
-                    "THEN",
-                ),
-                Sequence(
-                    "WHEN",
-                    "OTHER",
-                    "THEN",
-                ),
-            ),
-            Ref("ScriptingStatementSegment"),
-        ),
-        AnyNumberOf(
-            Sequence(
-                Ref("DelimiterGrammar"),
-                OneOf(
-                    Sequence(
-                        "WHEN",
-                        Ref("ObjectReferenceSegment"),
-                        AnyNumberOf(
-                            Sequence(
-                                "OR",
-                                Ref("ObjectReferenceSegment"),
-                            ),
-                        ),
-                        "THEN",
-                    ),
-                    Sequence(
-                        "WHEN",
-                        "OTHER",
-                        "THEN",
-                    ),
-                ),
-                Ref("ScriptingStatementSegment"),
-            ),
-        ),
-    )
 
 
 class LoopStatementSegment(BaseSegment):
@@ -9430,23 +9357,25 @@ class IfStatementSegment(BaseSegment):
             ),
             min_times=1,
         ),
-        Sequence(
-            "ELSEIF",
-            Bracketed(
-                Ref("ExpressionSegment"),
-            ),
-            "THEN",
-            AnyNumberOf(
-                Sequence(
-                    OneOf(
-                        Ref("StatementSegment"),
-                        Ref("BreakSegment"),
-                    ),
-                    Ref("DelimiterGrammar"),
+        AnyNumberOf(
+            Sequence(
+                "ELSEIF",
+                Bracketed(
+                    Ref("ExpressionSegment"),
                 ),
-                min_times=1,
+                "THEN",
+                AnyNumberOf(
+                    Sequence(
+                        OneOf(
+                            Ref("StatementSegment"),
+                            Ref("BreakSegment"),
+                        ),
+                        Ref("DelimiterGrammar"),
+                    ),
+                    min_times=1,
+                ),
+                optional=True,
             ),
-            optional=True,
         ),
         Sequence(
             "ELSE",
