@@ -1,21 +1,22 @@
-begin
+EXECUTE IMMEDIATE
+BEGIN
   -- variable based
-  let somevariable := 5;
-  let somevariable number(38, 0) := 5;
-  let somevariable number(38, 0) default 5;
-  let somevariable default 5;
+  LET somevariable := 5;
+  LET somevariable NUMBER(38, 0) := 5;
+  LET somevariable NUMBER(38, 0) DEFAULT 5;
+  LET somevariable DEFAULT 5;
 
   -- variable reassignment
   somevariable := 5;
 
   -- cursor based
-  let somevariable cursor for select some_col from some_database.schema.some_table;
-  let somevariable cursor for somevariable;
-  let someresult resultset := (select some_col from some_database.schema.some_table);
+  LET somevariable cursor FOR SELECT some_col FROM some_database.schema.some_table;
+  LET somevariable cursor FOR somevariable;
+  LET someresult resultset := (SELECT some_col FROM some_database.schema.some_table);
 
   -- resultset reassignment
-  someresult := (select SOME_COL from some_database.schema.some_table);
-end;
+  someresult := (SELECT SOME_COL FROM some_database.schema.some_table);
+END;
 
 LET VARIABLE := SOME_VALUE;
 SELECT :variable FROM my_table;

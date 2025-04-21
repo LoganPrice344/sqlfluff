@@ -1,0 +1,4 @@
+EXECUTE IMMEDIATE
+BEGIN
+    RAISE my_exception;
+END;

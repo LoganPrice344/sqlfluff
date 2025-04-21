@@ -1,0 +1,14 @@
+EXECUTE IMMEDIATE
+BEGIN
+    OPEN C1;
+END;
+
+EXECUTE IMMEDIATE
+BEGIN
+    OPEN C1 USING (variable);
+END;
+
+EXECUTE IMMEDIATE
+BEGIN
+    OPEN C1 USING (variable, variable2, variable3, variable4);
+END;

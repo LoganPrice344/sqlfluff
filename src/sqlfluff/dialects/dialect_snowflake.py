@@ -9317,7 +9317,6 @@ class ScriptingStatementSegment(ansi.StatementSegment):
     )
 
 
-
 class LoopStatementSegment(BaseSegment):
     """Loop statement segment."""
 
