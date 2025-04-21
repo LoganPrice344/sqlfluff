@@ -15,6 +15,8 @@ from sqlfluff.core.parser import (
     Delimited,
     IdentifierSegment,
     ImplicitIndent,
+    Indent,
+    LiteralKeywordSegment,
     Matchable,
     Nothing,
     OneOf,
@@ -24,6 +26,7 @@ from sqlfluff.core.parser import (
     RegexParser,
     SegmentGenerator,
     Sequence,
+    StringParser,
     WordSegment,
 )
 from sqlfluff.dialects import dialect_ansi as ansi
@@ -207,6 +210,11 @@ redshift_dialect.replace(
             casefold=str.lower,
         )
     ),
+    LiteralGrammar=ansi_dialect.get_grammar("LiteralGrammar").copy(
+        insert=[
+            Ref("MaxLiteralSegment"),
+        ]
+    ),
 )
 
 redshift_dialect.patch_lexer_matchers(
@@ -262,6 +270,7 @@ redshift_dialect.add(
             "UNLIMITED",
         ),
     ),
+    MaxLiteralSegment=StringParser("max", LiteralKeywordSegment, type="max_literal"),
 )
 
 
@@ -431,6 +440,12 @@ class DatatypeSegment(BaseSegment):
             Ref("BracketedArguments", optional=True),
         ),
         "ANYELEMENT",
+        Sequence(
+            Ref("SingleIdentifierGrammar"),
+            Ref("DotSegment"),
+            Ref("DatatypeIdentifierSegment"),
+            allow_gaps=False,
+        ),
     )
 
 
@@ -797,7 +812,7 @@ class CreateTableStatementSegment(BaseSegment):
         Bracketed(
             Delimited(
                 # Columns and comment syntax:
-                AnyNumberOf(
+                OneOf(
                     Sequence(
                         Ref("ColumnReferenceSegment"),
                         Ref("DatatypeSegment"),
@@ -2697,4 +2712,37 @@ class UnorderedSelectStatementSegment(ansi.UnorderedSelectStatementSegment):
     match_grammar = ansi.UnorderedSelectStatementSegment.match_grammar.copy(
         insert=[Ref("QualifyClauseSegment", optional=True)],
         before=Ref("OverlapsClauseSegment", optional=True),
+    )
+
+
+class GroupByClauseSegment(postgres.GroupByClauseSegment):
+    """A `GROUP BY` clause like in `SELECT`."""
+
+    type = "groupby_clause"
+    match_grammar = Sequence(
+        "GROUP",
+        "BY",
+        Indent,
+        Delimited(
+            OneOf(
+                "ALL",
+                Ref("ColumnReferenceSegment"),
+                # Can `GROUP BY 1`
+                Ref("NumericLiteralSegment"),
+                Ref("CubeRollupClauseSegment"),
+                Ref("GroupingSetsClauseSegment"),
+                # Can `GROUP BY coalesce(col, 1)`
+                Ref("ExpressionSegment"),
+                Bracketed(),  # Allows empty parentheses
+            ),
+            terminators=[
+                Sequence("ORDER", "BY"),
+                "LIMIT",
+                "HAVING",
+                "QUALIFY",
+                "WINDOW",
+                Ref("SetOperatorSegment"),
+            ],
+        ),
+        Dedent,
     )
