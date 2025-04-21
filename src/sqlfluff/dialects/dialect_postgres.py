@@ -14,6 +14,7 @@ from sqlfluff.core.parser import (
     Dedent,
     Delimited,
     IdentifierSegment,
+    ImplicitIndent,
     Indent,
     LiteralKeywordSegment,
     LiteralSegment,
@@ -274,6 +275,7 @@ postgres_dialect.patch_lexer_matchers(
     ]
 )
 
+postgres_dialect.sets("reserved_keywords").clear()
 postgres_dialect.sets("reserved_keywords").update(
     get_keywords(postgres_keywords, "reserved")
 )
@@ -527,6 +529,13 @@ postgres_dialect.replace(
         Ref("IgnoreRespectNullsGrammar"),
         Ref("IndexColumnDefinitionSegment"),
         Ref("EmptyStructLiteralSegment"),
+        Delimited(
+            Sequence(
+                Ref("ExpressionSegment"),
+                OneOf("VALUE", Ref("ColonSegment")),
+                Ref("ExpressionSegment"),
+            )
+        ),
     ),
     QuotedLiteralSegment=OneOf(
         # Postgres allows newline-concatenated string literals (#1488).
@@ -659,6 +668,7 @@ postgres_dialect.replace(
         "WHERE",
         Sequence("ORDER", "BY"),
         "LIMIT",
+        "RETURNING",
         Ref("CommaSegment"),
         Ref("SetOperatorSegment"),
         Ref("MetaCommandQueryBufferSegment"),
@@ -1802,6 +1812,7 @@ class SelectClauseSegment(ansi.SelectClauseSegment):
             "WHERE",
             Sequence("ORDER", "BY"),
             "LIMIT",
+            "RETURNING",
             "OVERLAPS",
             Ref("SetOperatorSegment"),
             Sequence("WITH", Ref.keyword("NO", optional=True), "DATA"),
@@ -4996,7 +5007,9 @@ class ConflictActionSegment(BaseSegment):
             "NOTHING",
             Sequence(
                 "UPDATE",
+                Indent,
                 "SET",
+                ImplicitIndent,
                 Delimited(
                     OneOf(
                         Sequence(
@@ -5019,7 +5032,9 @@ class ConflictActionSegment(BaseSegment):
                         ),
                     )
                 ),
+                Dedent,
                 Sequence("WHERE", Ref("ExpressionSegment"), optional=True),
+                Dedent,
             ),
         ),
     )
@@ -5772,6 +5787,7 @@ class DeleteStatementSegment(ansi.DeleteStatementSegment):
             Dedent,
             optional=True,
         ),
+        Ref("JoinClauseSegment", optional=True),
         OneOf(
             Sequence("WHERE", "CURRENT", "OF", Ref("ObjectReferenceSegment")),
             Ref("WhereClauseSegment"),

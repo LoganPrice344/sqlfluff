@@ -35,3 +35,18 @@ BEGIN
     -- Execution resumes here after the BREAK executes.
     RETURN i;
 END;
+
+DECLARE
+    res RESULTSET;
+
+DECLARE
+    res RESULTSET DEFAULT;
+
+DECLARE
+    res RESULTSET DEFAULT ASYNC (SELECT a FROM t001 ORDER BY a);
+
+DECLARE
+    res RESULTSET := (SELECT a FROM t001 ORDER BY a);
+
+DECLARE
+    res RESULTSET := ASYNC (SELECT a FROM t001 ORDER BY a);

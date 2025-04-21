@@ -100,11 +100,11 @@ def test__cli__command_directed():
     check_a = "L:   2 | P:   1 | LT02"
     # NB: Skip the number at the end because it's configurable
     check_b = "ndentation"
-    assert check_a in result.output
-    assert check_b in result.output
+    assert check_a in result.stdout
+    assert check_b in result.stdout
     # Finally check the WHOLE output to make sure that unexpected newlines are not
     # added. The replace command just accounts for cross platform testing.
-    assert result.output.replace("\\", "/").startswith(expected_output)
+    assert result.stdout.replace("\\", "/").startswith(expected_output)
 
 
 def test__cli__command_dialect():
@@ -145,10 +145,10 @@ def test__cli__command_no_dialect(command):
         ],
         cli_input="SELECT 1",
     )
-    assert "User Error" in result.stdout
-    assert "No dialect was specified" in result.stdout
+    assert "User Error" in result.stderr
+    assert "No dialect was specified" in result.stderr
     # No traceback should be in the output
-    assert "Traceback (most recent call last)" not in result.stdout
+    assert "Traceback (most recent call last)" not in result.stderr
 
 
 def test__cli__command_parse_error_dialect_explicit_warning():
@@ -167,7 +167,7 @@ def test__cli__command_parse_error_dialect_explicit_warning():
                 "test/fixtures/cli/fail_many.sql",
             ],
         ],
-        assert_output_contains=(
+        assert_stdout_contains=(
             "WARNING: Parsing errors found and dialect is set to 'postgres'. "
             "Have you configured your dialect correctly?"
         ),
@@ -191,7 +191,7 @@ def test__cli__command_parse_error_dialect_implicit_warning():
                 "test/fixtures/cli/fail_many.sql",
             ],
         ],
-        assert_output_contains=(
+        assert_stdout_contains=(
             "WARNING: Parsing errors found and dialect is set to 'tsql'. "
             "Have you configured your dialect correctly?"
         ),
@@ -211,7 +211,7 @@ def test__cli__command_dialect_legacy():
                 "test/fixtures/linter/indentation_error_simple.sql",
             ],
         ],
-        assert_output_contains="Please use the 'exasol' dialect instead.",
+        assert_stdout_contains="Please use the 'exasol' dialect instead.",
     )
 
 
@@ -227,7 +227,7 @@ def test__cli__command_extra_config_fail():
                 "test/fixtures/cli/extra_config_tsql.sql",
             ],
         ],
-        assert_output_contains=(
+        assert_stdout_contains=(
             "Extra config path 'test/fixtures/cli/extra_configs/.sqlfluffsdfdfdfsfd' "
             "does not exist."
         ),
@@ -235,12 +235,12 @@ def test__cli__command_extra_config_fail():
 
 
 stdin_cli_input = (
-    "SELECT\n    A.COL1,\n    B.COL2\nFROM TABA AS A\n" "POSITIONAL JOIN TABB AS B;\n"
+    "SELECT\n    A.COL1,\n    B.COL2\nFROM TABA AS A\nPOSITIONAL JOIN TABB AS B;\n"
 )
 
 
 @pytest.mark.parametrize(
-    ("command", "stdin_filepath", "ret_code", "output"),
+    ("command", "stdin_filepath", "ret_code", "stdout", "stderr"),
     [
         (
             parse,
@@ -251,47 +251,55 @@ stdin_cli_input = (
                 "[L:  5, P:  1]      |                        keyword:"
                 "                              'POSITIONAL'"
             ),
+            "",
         ),
         (
             parse,
             "test/fixtures/an_ansi_config_here.sql",
             1,
             "Parsing errors found and dialect is set to 'ansi'.",
+            "",
         ),
         (
             lint,
             "test/fixtures/cli/stdin_filename/stdin_filename.sql",
             0,
             "All Finished!",
+            "",
         ),
         (
             lint,
             "test/fixtures/cli/stdin_filename/without_config/stdin_filename.sql",
             0,
             "All Finished!",
+            "",
         ),
         (
             lint,
             "test/fixtures/an_ansi_config_here.sql",
             1,
             "Parsing errors found and dialect is set to 'ansi'.",
+            "",
         ),
         (
             cli_format,
             "test/fixtures/cli/stdin_filename/stdin_filename.sql",
             0,
             stdin_cli_input,
+            "",
         ),
         (
             cli_format,
             "test/fixtures/cli/stdin_filename/without_config/stdin_filename.sql",
             0,
             stdin_cli_input,
+            "",
         ),
         (
             cli_format,
             "test/fixtures/an_ansi_config_here.sql",
             1,
+            "",
             "[1 templating/parsing errors found]",
         ),
         (
@@ -299,22 +307,27 @@ stdin_cli_input = (
             "test/fixtures/cli/stdin_filename/stdin_filename.sql",
             0,
             stdin_cli_input,
+            "",
         ),
         (
             fix,
             "test/fixtures/cli/stdin_filename/without_config/stdin_filename.sql",
             0,
             stdin_cli_input,
+            "",
         ),
         (
             fix,
             "test/fixtures/an_ansi_config_here.sql",
             1,
+            "",
             "Unfixable violations detected.",
         ),
     ],
 )
-def test__cli__command_stdin_filename_config(command, stdin_filepath, ret_code, output):
+def test__cli__command_stdin_filename_config(
+    command, stdin_filepath, ret_code, stdout, stderr
+):
     """Check the script picks up the config from the indicated path."""
     invoke_assert_code(
         ret_code=ret_code,
@@ -327,7 +340,8 @@ def test__cli__command_stdin_filename_config(command, stdin_filepath, ret_code, 
             ],
         ],
         cli_input=stdin_cli_input,
-        assert_output_contains=output,
+        assert_stdout_contains=stdout,
+        assert_stderr_contains=stderr,
     )
 
 
@@ -381,7 +395,7 @@ def test__cli__command_render_stdin():
         args=[render, ("--dialect=ansi", "-")],
         cli_input=sql,
         # Check we get back out the same file we input.
-        assert_output_contains=sql,
+        assert_stdout_contains=sql,
     )
 
 
@@ -759,7 +773,7 @@ def test__cli__command_lint_warning_explicit_file_ignored():
     assert (
         "Exact file path test/fixtures/linter/sqlfluffignore/path_b/query_c.sql "
         "was given but it was ignored"
-    ) in result.output.strip()
+    ) in result.stdout.strip()
 
 
 def test__cli__command_lint_skip_ignore_files():
@@ -773,7 +787,7 @@ def test__cli__command_lint_skip_ignore_files():
         ],
     )
     assert result.exit_code == 1
-    assert "LT12" in result.output.strip()
+    assert "LT12" in result.stdout.strip()
 
 
 def test__cli__command_lint_ignore_local_config():
@@ -788,7 +802,7 @@ def test__cli__command_lint_ignore_local_config():
         ],
     )
     assert result.exit_code == 0
-    assert "AL02" not in result.output.strip()
+    assert "AL02" not in result.stdout.strip()
     # Then repeat the same lint but this time ignoring the .sqlfluff file.
     # We should see AL02 raised.
     result = runner.invoke(
@@ -800,7 +814,7 @@ def test__cli__command_lint_ignore_local_config():
         ],
     )
     assert result.exit_code == 1
-    assert "AL02" in result.output.strip()
+    assert "AL02" in result.stdout.strip()
 
 
 def test__cli__command_lint_warning():
@@ -821,12 +835,12 @@ def test__cli__command_lint_warning():
     # Because we're only warning. The command should pass.
     assert result.exit_code == 0
     # The output should still say PASS.
-    assert "PASS" in result.output.strip()
+    assert "PASS" in result.stdout.strip()
     # But should also contain the warnings.
     # NOTE: Not including the whole description because it's too long.
     assert (
         "L:   4 | P:   9 | LT01 | WARNING: Expected single whitespace"
-        in result.output.strip()
+        in result.stdout.strip()
     )
 
 
@@ -848,12 +862,12 @@ def test__cli__command_lint_warning_name_rule():
     # Because we're only warning. The command should pass.
     assert result.exit_code == 0
     # The output should still say PASS.
-    assert "PASS" in result.output.strip()
+    assert "PASS" in result.stdout.strip()
     # But should also contain the warnings.
     # NOTE: Not including the whole description because it's too long.
     assert (
         "L:   4 | P:   9 | LT01 | WARNING: Expected single whitespace"
-        in result.output.strip()
+        in result.stdout.strip()
     )
 
 
@@ -861,8 +875,9 @@ def test__cli__command_versioning():
     """Check version command."""
     # Get the package version info
     pkg_version = sqlfluff.__version__
-    # Get the version info from the config file
-    with open("pyproject.toml", "r") as config_file:
+    # Get the version info from the config file.
+    # NOTE: Toml files are always encoded in UTF-8.
+    with open("pyproject.toml", "r", encoding="utf-8") as config_file:
         config = tomllib.loads(config_file.read())
     config_version = config["project"]["version"]
     assert pkg_version == config_version
@@ -871,7 +886,7 @@ def test__cli__command_versioning():
     result = runner.invoke(version)
     assert result.exit_code == 0
     # We need to strip to remove the newline characters
-    assert result.output.strip() == pkg_version
+    assert result.stdout.strip() == pkg_version
 
 
 def test__cli__command_version():
@@ -881,11 +896,11 @@ def test__cli__command_version():
     runner = CliRunner()
     result = runner.invoke(version)
     assert result.exit_code == 0
-    assert pkg_version in result.output
+    assert pkg_version in result.stdout
     # Check a verbose version
     result = runner.invoke(version, ["-v"])
     assert result.exit_code == 0
-    assert pkg_version in result.output
+    assert pkg_version in result.stdout
 
 
 def test__cli__command_rules():
@@ -1217,7 +1232,8 @@ def test__cli__command_fix_stdin(stdin, rules, stdout):
         ],
         cli_input=stdin,
     )
-    assert result.output == stdout
+    assert result.stdout == stdout
+    assert result.stderr == ""
 
 
 @pytest.mark.parametrize(
@@ -1256,7 +1272,6 @@ def test__cli__command_format_stdin(stdin, stdout):
             ("-", "--disable-progress-bar", "--dialect=ansi"),
         ],
         cli_input=stdin,
-        mix_stderr=False,
     )
     assert result.stdout == stdout
 
@@ -1275,7 +1290,6 @@ def test__cli__command_fix_stdin_logging_to_stderr(monkeypatch):
     result = invoke_assert_code(
         args=[fix, ("-", "--rules=LT02", "--dialect=ansi")],
         cli_input=perfect_sql,
-        mix_stderr=False,
     )
 
     assert result.stdout == perfect_sql
@@ -1291,11 +1305,12 @@ def test__cli__command_fix_stdin_safety():
         args=[fix, ("-", "--disable-progress-bar", "--dialect=ansi")],
         cli_input=perfect_sql,
     )
-    assert result.output.strip() == perfect_sql
+    assert result.stdout.strip() == perfect_sql
+    assert result.stderr == ""
 
 
 @pytest.mark.parametrize(
-    "sql,exit_code,params,assert_output_contains",
+    "sql,exit_code,params,assert_stderr_contains",
     [
         (
             "create TABLE {{ params.dsfsdfds }}.t (a int)",
@@ -1314,14 +1329,14 @@ def test__cli__command_fix_stdin_safety():
     ],
 )
 def test__cli__command_fix_stdin_error_exit_code(
-    sql, exit_code, params, assert_output_contains
+    sql, exit_code, params, assert_stderr_contains
 ):
     """Check that the CLI fails nicely if fixing a templated stdin."""
     invoke_assert_code(
         ret_code=exit_code,
         args=[fix, ((params,) if params else ()) + ("--dialect=ansi", "-")],
         cli_input=sql,
-        assert_output_contains=assert_output_contains,
+        assert_stderr_contains=assert_stderr_contains,
     )
 
 
@@ -1369,7 +1384,7 @@ def test__cli__command_parse_serialize_from_stdin(serialize, write_file, tmp_pat
         with open(target_file, "r") as payload_file:
             result_payload = payload_file.read()
     else:
-        result_payload = result.output
+        result_payload = result.stdout
 
     if serialize == "json":
         result = json.loads(result_payload)
@@ -1543,21 +1558,21 @@ def test__cli__command_lint_serialize_from_stdin(
     )
 
     if serialize == "json":
-        result = json.loads(result.output)
+        result = json.loads(result.stdout)
         # Drop any timing section (because it's less determinate)
         for record in result:
             if "timings" in record:
                 del record["timings"]
         assert result == expected
     elif serialize == "yaml":
-        result = yaml.safe_load(result.output)
+        result = yaml.safe_load(result.stdout)
         # Drop any timing section (because it's less determinate)
         for record in result:
             if "timings" in record:
                 del record["timings"]
         assert result == expected
     elif serialize == "none":
-        assert result.output == ""
+        assert result.stdout == ""
     else:
         raise Exception
 
@@ -1574,7 +1589,7 @@ def test__cli__command_fail_nice_not_found(command):
     invoke_assert_code(
         args=command,
         ret_code=2,
-        assert_output_contains=(
+        assert_stderr_contains=(
             "User Error: Specified path does not exist. Check it/they "
             "exist(s): this_file_does_not_exist.sql"
         ),
@@ -1651,7 +1666,7 @@ def test__cli__command_lint_serialize_multiple_files(serialize, write_file, tmp_
         with open(target_file, "r") as payload_file:
             result_payload = payload_file.read()
     else:
-        result_payload = result.output
+        result_payload = result.stdout
 
     # Print for debugging.
     payload_length = len(result_payload.split("\n"))
@@ -1701,7 +1716,7 @@ def test__cli__command_lint_serialize_github_annotation():
         ],
         ret_code=1,
     )
-    result = json.loads(result.output)
+    result = json.loads(result.stdout)
     assert result == [
         {
             "annotation_level": "warning",
@@ -1874,7 +1889,7 @@ def test__cli__command_lint_serialize_github_annotation_native(
         ],
         ret_code=1,
     )
-    assert result.output == expected_output.format(filename=fpath_normalised)
+    assert result.stdout == expected_output.format(filename=fpath_normalised)
 
 
 @pytest.mark.parametrize("serialize", ["github-annotation", "github-annotation-native"])
@@ -1913,7 +1928,7 @@ def test__cli__command_lint_serialize_annotation_level_error_failure_equivalent(
         ret_code=1,
     )
 
-    assert result_error.output == result_failure.output
+    assert result_error.stdout == result_failure.stdout
 
 
 def test___main___help():
@@ -1970,11 +1985,11 @@ def test_cli_encoding(encoding, method, expect_success, tmpdir):
             options,
         ],
     )
-    raw_output = repr(result.output)
+    raw_stdout = repr(result.stdout)
 
     # Incorrect encoding raises parsing and lexer errors.
-    success1 = r"L:   1 | P:   1 |  LXR |" not in raw_output
-    success2 = r"L:   1 | P:   1 |  PRS |" not in raw_output
+    success1 = r"L:   1 | P:   1 |  LXR |" not in raw_stdout
+    success2 = r"L:   1 | P:   1 |  PRS |" not in raw_stdout
     assert success1 == expect_success
     assert success2 == expect_success
 
@@ -2002,7 +2017,7 @@ def test_cli_disable_noqa_flag():
             ],
         ],
         # Linting error is raised even though it is inline ignored.
-        assert_output_contains=r"L:   6 | P:  11 | CP01 |",
+        assert_stdout_contains=r"L:   6 | P:  11 | CP01 |",
     )
 
 
@@ -2019,9 +2034,9 @@ def test_cli_disable_noqa_except_flag():
             ],
         ],
         # Linting error is raised even though it is inline ignored.
-        assert_output_contains=r"L:   8 | P:   5 | CP03 |",
+        assert_stdout_contains=r"L:   8 | P:   5 | CP03 |",
     )
-    assert r"L:   6 | P:  11 | CP01 |" not in result.output
+    assert r"L:   6 | P:  11 | CP01 |" not in result.stdout
 
 
 def test_cli_disable_noqa_except_non_rules_flag():
@@ -2037,7 +2052,7 @@ def test_cli_disable_noqa_except_non_rules_flag():
             ],
         ],
         # Linting error is raised even though it is inline ignored.
-        assert_output_contains=r"L:   6 | P:  11 | CP01 |",
+        assert_stdout_contains=r"L:   6 | P:  11 | CP01 |",
     )
 
 
@@ -2054,7 +2069,7 @@ def test_cli_warn_unused_noqa_flag():
             ],
         ],
         # Warning shown.
-        assert_output_contains=(
+        assert_stdout_contains=(
             r"L:   5 | P:  18 | NOQA | WARNING: Unused noqa: 'noqa: CP01'"
         ),
     )
@@ -2101,11 +2116,11 @@ class TestProgressBars:
                 ],
             ],
         )
-        raw_output = repr(result.output)
+        raw_stderr = repr(result.stderr)
 
-        assert "\rpath test/fixtures/linter/passing.sql:" not in raw_output
-        assert "\rparsing: 0it" not in raw_output
-        assert "\r\rlint by rules:" not in raw_output
+        assert "\rpath test/fixtures/linter/passing.sql:" not in raw_stderr
+        assert "\rparsing: 0it" not in raw_stderr
+        assert "\r\rlint by rules:" not in raw_stderr
 
     def test_cli_lint_enabled_progress_bar(
         self, mock_disable_progress_bar: MagicMock
@@ -2119,11 +2134,11 @@ class TestProgressBars:
                 ],
             ],
         )
-        raw_output = repr(result.output)
+        raw_stderr = repr(result.stderr)
 
-        assert r"\rlint by rules:" in raw_output
-        assert r"\rrule LT01:" in raw_output
-        assert r"\rrule CV05:" in raw_output
+        assert r"\rlint by rules:" in raw_stderr
+        assert r"\rrule LT01:" in raw_stderr
+        assert r"\rrule CV05:" in raw_stderr
 
     def test_cli_lint_enabled_progress_bar_multiple_paths(
         self, mock_disable_progress_bar: MagicMock
@@ -2139,15 +2154,15 @@ class TestProgressBars:
                 ],
             ],
         )
-        normalised_output = repr(result.output.replace("\\", "/"))
+        normalised_stderr = repr(result.stderr.replace("\\", "/"))
 
-        assert r"\rfile test/fixtures/linter/passing.sql:" in normalised_output
+        assert r"\rfile test/fixtures/linter/passing.sql:" in normalised_stderr
         assert (
-            r"\rfile test/fixtures/linter/indentation_errors.sql:" in normalised_output
+            r"\rfile test/fixtures/linter/indentation_errors.sql:" in normalised_stderr
         )
-        assert r"\rlint by rules:" in normalised_output
-        assert r"\rrule LT01:" in normalised_output
-        assert r"\rrule CV05:" in normalised_output
+        assert r"\rlint by rules:" in normalised_stderr
+        assert r"\rrule LT01:" in normalised_stderr
+        assert r"\rrule CV05:" in normalised_stderr
 
     def test_cli_lint_enabled_progress_bar_multiple_files(
         self, mock_disable_progress_bar: MagicMock
@@ -2161,7 +2176,7 @@ class TestProgressBars:
                 ],
             ],
         )
-        raw_output = repr(result.output)
+        raw_stderr = repr(result.stderr)
 
         sep = os.sep
         if sys.platform == "win32":
@@ -2170,23 +2185,23 @@ class TestProgressBars:
             r"\rfile test/fixtures/linter/multiple_files/passing.1.sql:".replace(
                 "/", sep
             )
-            in raw_output
+            in raw_stderr
         )
         assert (
             r"\rfile test/fixtures/linter/multiple_files/passing.2.sql:".replace(
                 "/", sep
             )
-            in raw_output
+            in raw_stderr
         )
         assert (
             r"\rfile test/fixtures/linter/multiple_files/passing.3.sql:".replace(
                 "/", sep
             )
-            in raw_output
+            in raw_stderr
         )
-        assert r"\rlint by rules:" in raw_output
-        assert r"\rrule LT01:" in raw_output
-        assert r"\rrule CV05:" in raw_output
+        assert r"\rlint by rules:" in raw_stderr
+        assert r"\rrule LT01:" in raw_stderr
+        assert r"\rrule CV05:" in raw_stderr
 
 
 multiple_expected_output = """==== finding fixable violations ====
@@ -2215,7 +2230,7 @@ def test__cli__fix_multiple_errors_no_show_errors():
                 "test/fixtures/linter/multiple_sql_errors.sql",
             ],
         ],
-        assert_output_contains=multiple_expected_output,
+        assert_stdout_contains=multiple_expected_output,
     )
 
 
@@ -2233,7 +2248,7 @@ def test__cli__fix_multiple_errors_quiet_force():
                 "_fix",
             ],
         ],
-        assert_output_contains=(
+        assert_stdout_contains=(
             """== [test/fixtures/linter/multiple_sql_errors.sql] FIXED
 2 fixable linting violations found"""
         ),
@@ -2257,7 +2272,7 @@ def test__cli__fix_multiple_errors_quiet_check():
             # Test with the confirmation step.
             "y",
         ],
-        assert_output_contains=(
+        assert_stdout_contains=(
             """2 fixable linting violations found
 Are you sure you wish to attempt to fix these? [Y/n] ...
 == [test/fixtures/linter/multiple_sql_errors.sql] FIXED
@@ -2282,25 +2297,25 @@ def test__cli__fix_multiple_errors_show_errors():
     )
     # We should get a readout of what the error was
     check_a = "4 unfixable linting violations found"
-    assert check_a in result.output
+    assert check_a in result.stdout
     # Finally check the WHOLE output to make sure that unexpected newlines are not
     # added. The replace command just accounts for cross platform testing.
-    assert "L:  12 | P:   1 | LT02 | Expected indent of 4 spaces." in result.output
+    assert "L:  12 | P:   1 | LT02 | Expected indent of 4 spaces." in result.stdout
     assert (
         "L:  36 | P:   9 | RF02 | Unqualified reference 'package_id' found in "
-        "select with more than" in result.output
+        "select with more than" in result.stdout
     )
     assert (
         "L:  45 | P:  17 | RF02 | Unqualified reference 'owner_type' found in "
-        "select with more than" in result.output
+        "select with more than" in result.stdout
     )
     assert (
         "L:  45 | P:  50 | RF02 | Unqualified reference 'app_key' found in "
-        "select with more than one" in result.output
+        "select with more than one" in result.stdout
     )
     assert (
         "L:  42 | P:  45 | RF02 | Unqualified reference 'owner_id' found in "
-        "select with more than" in result.output
+        "select with more than" in result.stdout
     )
 
 
@@ -2317,12 +2332,12 @@ def test__cli__fix_show_parse_errors():
         ],
     )
     check_a = "1 templating/parsing errors found"
-    assert check_a not in result.output
+    assert check_a not in result.stderr
     assert (
         "L:   9 | P:  21 |  PRS | Couldn't find closing bracket for opening bracket."
-        in result.output
+        in result.stdout
     )
-    assert "L:   9 | P:  22 |  LXR | Unable to lex characters: " in result.output
+    assert "L:   9 | P:  22 |  LXR | Unable to lex characters: " in result.stdout
 
     # Calling without show-lint-violations
     result = invoke_assert_code(
@@ -2334,12 +2349,12 @@ def test__cli__fix_show_parse_errors():
             ],
         ],
     )
-    assert check_a in result.output
+    assert check_a in result.stderr
     assert (
         "L:   9 | P:  21 |  PRS | Couldn't find closing bracket for opening bracket."
-        not in result.output
+        not in result.stdout
     )
-    assert "L:   9 | P:  22 |  LXR | Unable to lex characters: " not in result.output
+    assert "L:   9 | P:  22 |  LXR | Unable to lex characters: " not in result.stdout
 
 
 def test__cli__multiple_files__fix_multiple_errors_show_errors():
@@ -2361,12 +2376,12 @@ def test__cli__multiple_files__fix_multiple_errors_show_errors():
     )
 
     unfixable_error_msg = "==== lint for unfixable violations ===="
-    assert unfixable_error_msg in result.output
+    assert unfixable_error_msg in result.stdout
 
     indent_pass_msg = f"== [{os.path.normpath(indent_path)}] PASS"
     multi_fail_msg = f"== [{os.path.normpath(sql_path)}] FAIL"
 
-    unfix_err_log = result.output[result.output.index(unfixable_error_msg) :]
+    unfix_err_log = result.stdout[result.stdout.index(unfixable_error_msg) :]
     assert indent_pass_msg in unfix_err_log
     assert multi_fail_msg in unfix_err_log
 
@@ -2384,8 +2399,8 @@ def test__cli__render_fail():
                 "test/fixtures/cli/fail_many.sql",
             ],
         ],
-        assert_output_contains=(
-            "L:   3 | P:   8 |  TMP | Undefined jinja template " "variable: 'something'"
+        assert_stdout_contains=(
+            "L:   3 | P:   8 |  TMP | Undefined jinja template variable: 'something'"
         ),
     )
 
@@ -2400,5 +2415,5 @@ def test__cli__render_pass():
                 "test/fixtures/templater/jinja_a/jinja.sql",
             ],
         ],
-        assert_output_contains="SELECT 56 FROM sch1.tbl2",
+        assert_stdout_contains="SELECT 56 FROM sch1.tbl2",
     )
