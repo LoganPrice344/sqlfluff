@@ -1447,6 +1447,7 @@ class StatementSegment(ansi.StatementSegment):
             Ref("RaiseSegment"),
             Ref("ReturnSegment"),
             Ref("SearchedCaseSegment"),
+            Ref("ScriptingDeclareStatementSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -3283,13 +3284,17 @@ class CreateProcedureStatementSegment(BaseSegment):
                 "AS",
                 OneOf(
                     Sequence(
-                        Ref("ScriptingDeclareStatementSegment", optional=True),
-                        Ref("ScriptingBlockStatementSegment"),
+                        OneOf(
+                            Ref("ScriptingDeclareStatementSegment"),
+                            Ref("ScriptingBlockStatementSegment"),
+                        ),
                     ),
                     Sequence(
                         Ref("RawDollarQuote"),
-                        Ref("ScriptingDeclareStatementSegment", optional=True),
-                        Ref("ScriptingBlockStatementSegment"),
+                        OneOf(
+                            Ref("ScriptingDeclareStatementSegment"),
+                            Ref("ScriptingBlockStatementSegment"),
+                        ),
                         Ref("DelimiterGrammar"),
                         Ref("RawDollarQuote"),
                     ),
@@ -8198,13 +8203,17 @@ class ExecuteImmediateClauseSegment(BaseSegment):
                 Ref("LocalVariableNameSegment"),
             ),
             Sequence(
-                Ref("ScriptingDeclareStatementSegment", optional=True),
-                Ref("ScriptingBlockStatementSegment"),
+                OneOf(
+                    Ref("ScriptingDeclareStatementSegment"),
+                    Ref("ScriptingBlockStatementSegment"),
+                ),
             ),
             Sequence(
                 Ref("RawDollarQuote"),
-                Ref("ScriptingDeclareStatementSegment", optional=True),
-                Ref("ScriptingBlockStatementSegment"),
+                OneOf(
+                    Ref("ScriptingDeclareStatementSegment"),
+                    Ref("ScriptingBlockStatementSegment"),
+                ),
                 Ref("DelimiterGrammar"),
                 Ref("RawDollarQuote"),
             ),
@@ -9270,55 +9279,8 @@ class ScriptingDeclareStatementSegment(BaseSegment):
     match_grammar = Sequence(
         "DECLARE",
         Indent,
-        Sequence(
-            # Avoid BEGIN as a variable from the subsequent scripting block
-            Ref("LocalVariableNameSegment", exclude=Ref.keyword("BEGIN")),
-            OneOf(
-                # Variable assignment
-                OneOf(
-                    Sequence(
-                        Ref("DatatypeSegment"),
-                        OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
-                        Ref("ExpressionSegment"),
-                    ),
-                    Sequence(
-                        OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
-                        Ref("ExpressionSegment"),
-                    ),
-                ),
-                # Cursor assignment
-                Sequence(
-                    "CURSOR",
-                    "FOR",
-                    OneOf(Ref("LocalVariableNameSegment"), Ref("SelectableGrammar")),
-                ),
-                # Resultset assignment
-                Sequence(
-                    "RESULTSET",
-                    Sequence(
-                        OneOf(
-                            "DEFAULT",
-                            Ref("WalrusOperatorSegment"),
-                        ),
-                        Sequence("ASYNC", optional=True),
-                        Bracketed(Ref("SelectClauseSegment"), optional=True),
-                        optional=True,
-                    ),
-                ),
-                # Exception assignment
-                Sequence(
-                    "EXCEPTION",
-                    Bracketed(
-                        Delimited(
-                            Ref("ExceptionCodeSegment"), Ref("QuotedLiteralSegment")
-                        )
-                    ),
-                ),
-            ),
-        ),
         AnyNumberOf(
             Sequence(
-                Ref("DelimiterGrammar"),
                 # Avoid BEGIN as a variable from the subsequent scripting block
                 Ref("LocalVariableNameSegment", exclude=Ref.keyword("BEGIN")),
                 OneOf(
@@ -9366,8 +9328,11 @@ class ScriptingDeclareStatementSegment(BaseSegment):
                         ),
                     ),
                 ),
+                Ref("DelimiterGrammar"),
             ),
         ),
+        Dedent,
+        Ref("ScriptingBlockStatementSegment"),
     )
 
 
