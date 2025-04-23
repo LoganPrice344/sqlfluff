@@ -639,6 +639,68 @@ snowflake_dialect.replace(
             casefold=str.upper,
         )
     ),
+    # Copied Expression_D_Grammar to insert Bind variables into the OneOf logic.
+    Expression_D_Grammar=Sequence(
+        OneOf(
+            Ref("BindVariableSegment"),
+            Ref("BareFunctionSegment"),
+            Ref("FunctionSegment"),
+            Bracketed(
+                OneOf(
+                    # We're using the expression segment here rather than the grammar so
+                    # that in the parsed structure we get nested elements.
+                    Ref("ExpressionSegment"),
+                    Ref("SelectableGrammar"),
+                    Delimited(
+                        Ref("LiteralGrammar"),  # WHERE (a, 2) IN (SELECT b, c FROM ...)
+                        Ref(
+                            "ColumnReferenceSegment"
+                        ),  # WHERE (a,b,c) IN (select a,b,c FROM...)
+                        Ref(
+                            "FunctionSegment"
+                        ),  # WHERE (a, substr(b,1,3)) IN (select c,d FROM...)
+                        Ref("LocalAliasSegment"),  # WHERE (LOCAL.a, LOCAL.b) IN (...)
+                        Ref(
+                            "ExpressionSegment"
+                        ),  # SELECT (1*1, 2) IN (STRUCT(1 AS a, 2 AS b));
+                    ),
+                ),
+                parse_mode=ParseMode.GREEDY,
+            ),
+            # Allow potential select statement without brackets
+            Ref("Expression_D_Potential_Select_Statement_Without_Brackets"),
+            # For triggers, we allow "NEW.*" but not just "*" nor "a.b.*"
+            # So can't use WildcardIdentifierSegment nor WildcardExpressionSegment
+            Sequence(
+                Ref("SingleIdentifierGrammar"),
+                Ref("ObjectReferenceDelimiterGrammar"),
+                Ref("StarSegment"),
+            ),
+            Sequence(
+                OneOf(Ref("StructTypeSegment"), Ref("MapTypeSegment")),
+                Bracketed(Delimited(Ref("ExpressionSegment"))),
+            ),
+            Sequence(
+                Ref("DatatypeSegment"),
+                # Don't use the full LiteralGrammar here
+                # because only some of them are applicable.
+                # Notably we shouldn't use QualifiedNumericLiteralSegment
+                # here because it looks like an arithmetic operation.
+                OneOf(
+                    Ref("QuotedLiteralSegment"),
+                    Ref("NumericLiteralSegment"),
+                    Ref("BooleanLiteralGrammar"),
+                    Ref("NullLiteralSegment"),
+                    Ref("DateTimeLiteralGrammar"),
+                ),
+            ),
+            Ref("LocalAliasSegment"),
+            Ref("ListComprehensionGrammar"),
+            terminators=[Ref("CommaSegment")],
+        ),
+        Ref("AccessorGrammar", optional=True),
+        allow_gaps=True,
+    ),
     LiteralGrammar=ansi_dialect.get_grammar("LiteralGrammar").copy(
         insert=[
             Ref("ReferencedVariableNameSegment"),
@@ -1448,6 +1510,7 @@ class StatementSegment(ansi.StatementSegment):
             Ref("ReturnSegment"),
             Ref("SearchedCaseSegment"),
             Ref("ScriptingDeclareStatementSegment"),
+            Ref("ArrayConstructSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -3612,11 +3675,17 @@ class ScriptingLetStatementSegment(BaseSegment):
                     Sequence(
                         Ref("DatatypeSegment"),
                         OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
-                        Ref("ExpressionSegment"),
+                        OneOf(
+                            Bracketed(Ref("ExecuteImmediateClauseSegment")),
+                            Ref("ExpressionSegment"),
+                        ),
                     ),
                     Sequence(
                         OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
-                        Ref("ExpressionSegment"),
+                        OneOf(
+                            Bracketed(Ref("ExecuteImmediateClauseSegment")),
+                            Ref("ExpressionSegment"),
+                        ),
                     ),
                 ),
                 # Cursor assignment
@@ -3640,7 +3709,10 @@ class ScriptingLetStatementSegment(BaseSegment):
             Ref("WalrusOperatorSegment"),
             OneOf(
                 # Variable reassigment
-                Ref("ExpressionSegment"),
+                OneOf(
+                    Bracketed(Ref("ExecuteImmediateClauseSegment")),
+                    Ref("ExpressionSegment"),
+                ),
                 # Cursors cannot be reassigned
                 # no code
                 # Resultset reassigment
@@ -8197,6 +8269,7 @@ class ExecuteImmediateClauseSegment(BaseSegment):
         OneOf(
             Ref("QuotedLiteralSegment"),
             Ref("ReferencedVariableNameSegment"),
+            Ref("BindVariableSegment"),
             Ref("StorageLocation"),
             Sequence(
                 Ref("ColonSegment"),
@@ -9234,8 +9307,25 @@ class ForInLoopSegment(BaseSegment):
                 "FOR",
                 Ref("LocalVariableNameSegment"),
                 "IN",
-                Ref("LocalVariableNameSegment"),
-                "DO",
+                OneOf(
+                    Sequence(
+                        Sequence(
+                            "REVERSE",
+                            optional=True,
+                        ),
+                        Ref("LocalVariableNameSegment"),
+                        "TO",
+                        Ref("LocalVariableNameSegment"),
+                        OneOf(
+                            "DO",
+                            "LOOP",
+                        ),
+                    ),
+                    Sequence(
+                        Ref("LocalVariableNameSegment"),
+                        "DO",
+                    ),
+                ),
                 Indent,
             ),
             Delimited(
@@ -9253,7 +9343,11 @@ class ForInLoopSegment(BaseSegment):
         Ref("DelimiterGrammar"),
         Dedent,
         "END",
-        "FOR",
+        OneOf(
+            "FOR",
+            "LOOP",
+        ),
+        Ref("LocalVariableNameSegment", optional=True),
     )
 
 
@@ -9290,6 +9384,11 @@ class ScriptingDeclareStatementSegment(BaseSegment):
                             Ref("DatatypeSegment"),
                             OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
                             Ref("ExpressionSegment"),
+                        ),
+                        Sequence(
+                            "ARRAY",
+                            "DEFAULT",
+                            Ref("ArrayConstructSegment"),
                         ),
                         Sequence(
                             OneOf("DEFAULT", Ref("WalrusOperatorSegment")),
@@ -10216,5 +10315,15 @@ class ReturnSegment(BaseSegment):
                 "TABLE",
                 Bracketed(Delimited(Ref("ColumnDefinitionSegment"), optional=True)),
             ),
+        ),
+    )
+
+
+class ArrayConstructSegment(BaseSegment):
+    type = "array_construct_segment"
+    match_grammar = Sequence(
+        "ARRAY_CONSTRUCT",
+        Bracketed(
+            Delimited(Ref("ExpressionSegment"), optional=True),
         ),
     )
