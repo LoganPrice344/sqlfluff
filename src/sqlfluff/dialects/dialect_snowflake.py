@@ -3630,12 +3630,12 @@ class ScriptingBlockStatementSegment(BaseSegment):
         Sequence(
             "BEGIN",
             Indent,
-            Ref("ScriptingStatementSegment"),
+            Ref("StatementSegment"),
         ),
         AnyNumberOf(
             Sequence(
                 Ref("DelimiterGrammar"),
-                Ref("ScriptingStatementSegment"),
+                Ref("StatementSegment"),
             ),
             terminators=[
                 OneOf(
@@ -8272,6 +8272,10 @@ class ExecuteImmediateClauseSegment(BaseSegment):
             Ref("BindVariableSegment"),
             Ref("StorageLocation"),
             Sequence(
+                "TRIM",
+                Ref("ExpressionSegment"),
+            ),
+            Sequence(
                 Ref("ColonSegment"),
                 Ref("LocalVariableNameSegment"),
             ),
@@ -9303,41 +9307,50 @@ class ForInLoopSegment(BaseSegment):
 
     match_grammar = Sequence(
         Sequence(
-            Sequence(
-                "FOR",
-                Ref("LocalVariableNameSegment"),
-                "IN",
-                OneOf(
+            "FOR",
+            Ref("LocalVariableNameSegment"),
+            "IN",
+            OneOf(
+                Sequence(
                     Sequence(
-                        Sequence(
-                            "REVERSE",
-                            optional=True,
-                        ),
-                        Ref("LocalVariableNameSegment"),
-                        "TO",
-                        Ref("LocalVariableNameSegment"),
-                        OneOf(
-                            "DO",
-                            "LOOP",
-                        ),
+                        "REVERSE",
+                        optional=True,
                     ),
-                    Sequence(
-                        Ref("LocalVariableNameSegment"),
+                    Ref("ExpressionSegment"),
+                    "TO",
+                    Ref("ExpressionSegment"),
+                    OneOf(
                         "DO",
+                        "LOOP",
                     ),
                 ),
-                Indent,
-            ),
-            Delimited(
-                OneOf(
-                    Ref("ScriptingStatementSegment"),
-                    Ref("BreakSegment"),
+                Sequence(
+                    Ref("LocalVariableNameSegment"),
+                    "DO",
                 ),
-                delimiter=Ref("DelimiterGrammar"),
             ),
-            parse_mode=ParseMode.GREEDY_ONCE_STARTED,
-            reset_terminators=True,
-            terminators=[Sequence(Ref("DelimiterGrammar"), "END", "FOR")],
+            Indent,
+        ),
+        OneOf(
+            Ref("StatementSegment"),
+            Ref("BreakSegment"),
+            Ref("ExecuteImmediateClauseSegment"),
+        ),
+        AnyNumberOf(
+            Sequence(
+                Ref("DelimiterGrammar"),
+                OneOf(
+                    Ref("StatementSegment"),
+                    Ref("BreakSegment"),
+                    Ref("ExecuteImmediateClauseSegment"),
+                ),
+            ),
+            terminators=[
+                OneOf(
+                    Sequence(Ref("DelimiterGrammar"), "END", "FOR"),
+                    Sequence(Ref("DelimiterGrammar"), "END", "LOOP"),
+                ),
+            ],
         ),
         # There must be a trailing semicolon
         Ref("DelimiterGrammar"),
@@ -9983,7 +9996,7 @@ class LoopStatementSegment(BaseSegment):
     match_grammar = Sequence(
         "LOOP",
         AnyNumberOf(
-            Ref("ScriptingStatementSegment"),
+            Ref("StatementSegment"),
             Ref("DelimiterGrammar"),
             min_times=1,
         ),
@@ -10071,14 +10084,14 @@ class TestWhen(BaseSegment):
                 ),
                 "THEN",
                 AnyNumberOf(
-                    Ref("ScriptingStatementSegment"),
+                    Ref("StatementSegment"),
                 ),
             ),
         ),
         Sequence(
             "ELSE",
             AnyNumberOf(
-                Ref("ScriptingStatementSegment"),
+                Ref("StatementSegment"),
                 min_times=1,
             ),
             optional=True,
@@ -10105,7 +10118,7 @@ class SimpleCaseSegment(BaseSegment):
                 "THEN",
                 AnyNumberOf(
                     Sequence(
-                        Ref("ScriptingStatementSegment"),
+                        Ref("StatementSegment"),
                         Ref("DelimiterGrammar"),
                     ),
                     min_times=1,
@@ -10116,7 +10129,7 @@ class SimpleCaseSegment(BaseSegment):
             "ELSE",
             AnyNumberOf(
                 Sequence(
-                    Ref("ScriptingStatementSegment"),
+                    Ref("StatementSegment"),
                     Ref("DelimiterGrammar"),
                 ),
                 min_times=1,
@@ -10145,7 +10158,7 @@ class SearchedCaseSegment(BaseSegment):
                 "THEN",
                 AnyNumberOf(
                     Sequence(
-                        Ref("ScriptingStatementSegment"),
+                        Ref("StatementSegment"),
                         Ref("DelimiterGrammar"),
                     ),
                     min_times=1,
@@ -10156,7 +10169,7 @@ class SearchedCaseSegment(BaseSegment):
             "ELSE",
             AnyNumberOf(
                 Sequence(
-                    Ref("ScriptingStatementSegment"),
+                    Ref("StatementSegment"),
                     Ref("DelimiterGrammar"),
                 ),
                 min_times=1,
@@ -10185,7 +10198,7 @@ class ScriptingWhileSegment(BaseSegment):
         ),
         AnyNumberOf(
             OneOf(
-                Ref("ScriptingStatementSegment"),
+                Ref("StatementSegment"),
                 Ref("BreakSegment"),
             ),
             Ref("DelimiterGrammar"),
@@ -10203,7 +10216,7 @@ class ScriptingRepeatSegment(BaseSegment):
         "REPEAT",
         AnyNumberOf(
             OneOf(
-                Ref("ScriptingStatementSegment"),
+                Ref("StatementSegment"),
                 Ref("BreakSegment"),
             ),
             Ref("DelimiterGrammar"),
