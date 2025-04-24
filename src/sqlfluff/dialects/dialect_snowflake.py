@@ -3346,6 +3346,8 @@ class CreateProcedureStatementSegment(BaseSegment):
                 Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
                 "AS",
                 OneOf(
+                    Ref("DoubleQuotedUDFBody"),
+                    Ref("SingleQuotedUDFBody"),
                     Sequence(
                         OneOf(
                             Ref("ScriptingDeclareStatementSegment"),
