@@ -3346,7 +3346,6 @@ class CreateProcedureStatementSegment(BaseSegment):
                 Sequence("EXECUTE", "AS", OneOf("CALLER", "OWNER"), optional=True),
                 "AS",
                 OneOf(
-                    Ref("DoubleQuotedUDFBody"),
                     Ref("SingleQuotedUDFBody"),
                     Sequence(
                         OneOf(
@@ -9762,7 +9761,12 @@ class ExceptionBlockStatementSegment(BaseSegment):
                     "THEN",
                 ),
             ),
-            Ref("StatementSegment"),
+            AnyNumberOf(
+                Sequence(
+                    Ref("StatementSegment"),
+                ),
+                terminators=[Sequence("WHEN")],
+            ),
         ),
         AnyNumberOf(
             Sequence(
@@ -9785,7 +9789,12 @@ class ExceptionBlockStatementSegment(BaseSegment):
                         "THEN",
                     ),
                 ),
-                Ref("StatementSegment"),
+                AnyNumberOf(
+                    Sequence(
+                        Ref("StatementSegment"),
+                    ),
+                    terminators=[Sequence("WHEN")],
+                ),
             ),
         ),
     )
