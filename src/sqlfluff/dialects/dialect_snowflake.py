@@ -645,6 +645,7 @@ snowflake_dialect.replace(
             Ref("BindVariableSegment"),
             Ref("BareFunctionSegment"),
             Ref("FunctionSegment"),
+            Ref("CastSegment"),
             Bracketed(
                 OneOf(
                     # We're using the expression segment here rather than the grammar so
@@ -1511,6 +1512,7 @@ class StatementSegment(ansi.StatementSegment):
             Ref("SearchedCaseSegment"),
             Ref("ScriptingDeclareStatementSegment"),
             Ref("ArrayConstructSegment"),
+            Ref("CastSegment"),
         ],
         remove=[
             Ref("CreateIndexStatementSegment"),
@@ -9765,7 +9767,7 @@ class ExceptionBlockStatementSegment(BaseSegment):
                 Sequence(
                     Ref("StatementSegment"),
                 ),
-                terminators=[Sequence("WHEN")],
+                terminators=[Sequence("WHEN"), Sequence("END")],
             ),
         ),
         AnyNumberOf(
@@ -9793,7 +9795,7 @@ class ExceptionBlockStatementSegment(BaseSegment):
                     Sequence(
                         Ref("StatementSegment"),
                     ),
-                    terminators=[Sequence("WHEN")],
+                    terminators=[Sequence("WHEN"), Sequence("END")],
                 ),
             ),
         ),
@@ -10350,4 +10352,29 @@ class ArrayConstructSegment(BaseSegment):
         Bracketed(
             Delimited(Ref("ExpressionSegment"), optional=True),
         ),
+    )
+
+
+class CastSegment(BaseSegment):
+    type = "cast_segment"
+    match_grammar = Sequence(
+        "CAST",
+        Bracketed(
+            Sequence(
+                Ref("ExpressionSegment"),
+                "AS",
+                Ref("ExpressionSegment"),
+            ),
+        ),
+        # OneOf(
+        #     Sequence(
+        #         "RENAME",
+        #         "FIELDS",
+        #     ),
+        #     Sequence(
+        #         "ADD",
+        #         "FIELDS",
+        #     ),
+        #     optional=True,
+        # ),
     )
