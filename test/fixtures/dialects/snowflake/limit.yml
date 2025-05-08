@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 008cdfed0726f654189359b6d3c1d601b60749f7eb4367cdb9f4e917dd9a84b2
+_hash: 392c73ba9a02de8da0cb27f35adf0791cfbd8a821a51ae336deb86cda2394fb3
 file:
 - statement:
     select_statement:
@@ -322,10 +322,11 @@ file:
       - keyword: by
       - column_reference:
           naked_identifier: c1
-      limit_clause:
+      offset_clause:
       - keyword: offset
       - numeric_literal: '1'
       - keyword: row
+      limit_clause:
       - keyword: fetch
       - numeric_literal: '1'
       - keyword: row
@@ -349,10 +350,11 @@ file:
       - keyword: by
       - column_reference:
           naked_identifier: c1
-      limit_clause:
+      offset_clause:
       - keyword: offset
       - numeric_literal: '3'
       - keyword: rows
+      limit_clause:
       - keyword: fetch
       - numeric_literal: '3'
       - keyword: rows
