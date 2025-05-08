@@ -34,7 +34,6 @@ class Parser:
         parse_statistics: bool = False,
     ) -> Optional["BaseSegment"]:
         """Parse a series of lexed tokens using the current dialect."""
-        # breakpoint()
         if not segments:  # pragma: no cover
             # This should normally never happen because there will usually
             # be an end_of_file segment. It would probably only happen in

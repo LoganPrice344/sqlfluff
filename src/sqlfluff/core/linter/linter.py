@@ -155,7 +155,6 @@ class Linter:
         templated_file: "TemplatedFile", config: FluffConfig
     ) -> tuple[Optional[Sequence[BaseSegment]], list[SQLLexError]]:
         """Lex a templated file."""
-        # breakpoint()
         violations = []
         linter_logger.info("LEXING RAW (%s)", templated_file.fname)
         # Get the lexer
@@ -218,7 +217,6 @@ class Linter:
     ) -> tuple[Optional[BaseSegment], list[SQLParseError]]:
         parser = Parser(config=config)
         violations = []
-        # breakpoint()
         # Parse the file and log any problems
         try:
             parsed: Optional[BaseSegment] = parser.parse(

@@ -95,7 +95,7 @@ snowflake_dialect.insert_lexer_matchers(
         ),
         RegexLexer(
             "inline_dollar_sign",
-            r"[a-zA-Z_][a-zA-Z0-9_$]*\$[a-zA-Z0-9_$]*",
+            r"[a-zA-Z_][a-zA-Z0-9_$]*\$[a-zA-Z0-9_$]*(?<!\$)",
             CodeSegment,
         ),
         RegexLexer(
@@ -233,11 +233,6 @@ snowflake_dialect.add(
         trim_chars=("'",),
     ),
     RawDollarQuote=StringParser("$$", SymbolSegment, type="raw_dollar_quote"),
-    DollarQuoteSegment=RegexParser(
-        r"[^(\$(?!\$))]+",
-        CodeSegment,
-        type="dollar_quote_segment",
-    ),
     # Any identifier is valid as a semi-structured element in Snowflake
     # as long as it's not a reserved keyword
     # https://docs.snowflake.com/en/sql-reference/identifiers-syntax
@@ -790,6 +785,7 @@ snowflake_dialect.replace(
             LiteralSegment,
             type="quoted_literal",
         ),
+        Ref("DollarQuotedUDFBody"),
     ),
     LikeGrammar=OneOf(
         # https://docs.snowflake.com/en/sql-reference/functions/like.html
@@ -2089,14 +2085,14 @@ class SelectClauseModifierSegment(ansi.SelectClauseModifierSegment):
     )
 
 
-class TestDollarQuote(BaseSegment):
+class DollarQuotedUDFBody(BaseSegment):
     """Non SQL Script String."""
 
     type = "test_dollar_quote"
     match_grammar = Sequence(
         Ref("RawDollarQuote"),
-        AnyNumberOf(
-            Ref("DollarQuoteSegment"), terminators=["$$"], reset_terminators=True
+        Anything(
+            terminators=[Ref("RawDollarQuote")], reset_terminators=True, optional=True
         ),
         Ref("RawDollarQuote"),
     )
@@ -3468,7 +3464,7 @@ class CreateProcedureStatementSegment(BaseSegment):
                         # Either a foreign programming language UDF...
                         Ref("DoubleQuotedUDFBody"),
                         Ref("SingleQuotedUDFBody"),
-                        Ref("TestDollarQuote"),
+                        Ref("DollarQuotedUDFBody"),
                     ),
                     optional=True,
                 ),
@@ -3830,7 +3826,7 @@ class CreateFunctionStatementSegment(BaseSegment):
                 # Either a foreign programming language UDF...
                 Ref("DoubleQuotedUDFBody"),
                 Ref("SingleQuotedUDFBody"),
-                Ref("DollarQuoteSegment"),
+                Ref("DollarQuotedUDFBody"),
                 # ...or a SQL UDF
                 Ref("ScriptingBlockStatementSegment"),
             ),
@@ -9884,123 +9880,6 @@ class CreateAuthenticationPolicySegment(BaseSegment):
     )
 
 
-class ScriptingStatementSegment(ansi.StatementSegment):
-    """A generic segment, to any of its child subsegments."""
-
-    match_grammar = ansi.StatementSegment.match_grammar.copy(
-        # NOTE: The Scripting Block segment must be tried before
-        # we get to the transaction statement (from the ansi dialect)
-        # because they both start with BEGIN.
-        insert=[
-            Ref("ScriptingBlockStatementSegment"),
-        ],
-        before=Ref("TransactionStatementSegment"),
-    ).copy(
-        insert=[
-            Ref("AccessStatementSegment"),
-            Ref("CreateStatementSegment"),
-            Ref("CreateTaskSegment"),
-            Ref("CreateUserSegment"),
-            Ref("CreateCloneStatementSegment"),
-            Ref("CreateProcedureStatementSegment"),
-            Ref("AlterProcedureStatementSegment"),
-            Ref("ScriptingLetStatementSegment"),
-            Ref("ScriptingDeclareStatementSegment"),
-            Ref("ReturnStatementSegment"),
-            Ref("ShowStatementSegment"),
-            Ref("AlterAccountStatementSegment"),
-            Ref("AlterUserStatementSegment"),
-            Ref("AlterSessionStatementSegment"),
-            Ref("AlterTaskStatementSegment"),
-            Ref("SetAssignmentStatementSegment"),
-            Ref("CallStoredProcedureSegment"),
-            Ref("MergeStatementSegment"),
-            Ref("CopyIntoTableStatementSegment"),
-            Ref("CopyIntoLocationStatementSegment"),
-            Ref("CopyFilesIntoLocationStatementSegment"),
-            Ref("FormatTypeOptions"),
-            Ref("AlterWarehouseStatementSegment"),
-            Ref("AlterShareStatementSegment"),
-            Ref("CreateExternalTableSegment"),
-            Ref("AlterExternalTableStatementSegment"),
-            Ref("CreateSchemaStatementSegment"),
-            Ref("AlterSchemaStatementSegment"),
-            Ref("CreateFunctionStatementSegment"),
-            Ref("AlterFunctionStatementSegment"),
-            Ref("CreateExternalFunctionStatementSegment"),
-            Ref("CreateStageSegment"),
-            Ref("AlterStageSegment"),
-            Ref("CreateStreamStatementSegment"),
-            Ref("CreateStreamlitStatementSegment"),
-            Ref("CreateCortexSearchServiceStatementSegment"),
-            Ref("AlterStreamStatementSegment"),
-            Ref("AlterStreamlitStatementSegment"),
-            Ref("AlterCortexSearchServiceStatementSegment"),
-            Ref("UnsetStatementSegment"),
-            Ref("UndropStatementSegment"),
-            Ref("CommentStatementSegment"),
-            Ref("CallStatementSegment"),
-            Ref("AlterViewStatementSegment"),
-            Ref("AlterMaterializedViewStatementSegment"),
-            Ref("DropProcedureStatementSegment"),
-            Ref("DropExternalTableStatementSegment"),
-            Ref("DropMaterializedViewStatementSegment"),
-            Ref("DropObjectStatementSegment"),
-            Ref("CreateFileFormatSegment"),
-            Ref("AlterFileFormatSegment"),
-            Ref("AlterPipeSegment"),
-            Ref("ListStatementSegment"),
-            Ref("GetStatementSegment"),
-            Ref("PutStatementSegment"),
-            Ref("RemoveStatementSegment"),
-            Ref("CreateDatabaseFromShareStatementSegment"),
-            Ref("CreateDatabaseRoleStatementSegment"),
-            Ref("AlterRoleStatementSegment"),
-            Ref("AlterStorageIntegrationSegment"),
-            Ref("ExecuteImmediateClauseSegment"),
-            Ref("ExecuteTaskClauseSegment"),
-            Ref("CreateResourceMonitorStatementSegment"),
-            Ref("AlterResourceMonitorStatementSegment"),
-            Ref("CreateSequenceStatementSegment"),
-            Ref("AlterSequenceStatementSegment"),
-            Ref("AlterDatabaseSegment"),
-            Ref("AlterMaskingPolicySegment"),
-            Ref("AlterNetworkPolicyStatementSegment"),
-            Ref("CreateExternalVolumeStatementSegment"),
-            Ref("DropExternalVolumeStatementSegment"),
-            Ref("AlterExternalVolumeStatementSegment"),
-            Ref("ForInLoopSegment"),
-            Ref("CreateEventTableStatementSegment"),
-            Ref("CreatePasswordPolicyStatementSegment"),
-            Ref("AlterPasswordPolicyStatementSegment"),
-            Ref("DropPasswordPolicyStatementSegment"),
-            Ref("CreateRowAccessPolicyStatementSegment"),
-            Ref("AlterRowAccessPolicyStatmentSegment"),
-            Ref("AlterTagStatementSegment"),
-            Ref("LoopStatementSegment"),
-            Ref("ExceptionBlockStatementSegment"),
-            Ref("IfStatementSegment"),
-            Ref("SimpleCaseSegment"),
-            Ref("ScriptingWhileSegment"),
-            Ref("ScriptingRepeatSegment"),
-            Ref("AwaitSegment"),
-            Ref("CancelSegment"),
-            Ref("CloseSegment"),
-            Ref("ContinueSegment"),
-            Ref("FetchSegment"),
-            Ref("NullSegment"),
-            Ref("OpenSegment"),
-            Ref("RaiseSegment"),
-            Ref("ReturnSegment"),
-            Ref("SearchedCaseSegment"),
-        ],
-        remove=[
-            Ref("CreateIndexStatementSegment"),
-            Ref("DropIndexStatementSegment"),
-        ],
-    )
-
-
 class LoopStatementSegment(BaseSegment):
     """Loop statement segment."""
 
@@ -10073,42 +9952,6 @@ class IfStatementSegment(BaseSegment):
         ),
         "END",
         "IF",
-    )
-
-
-class TestCase(BaseSegment):
-    type = "test_case"
-    match_grammar = Sequence(
-        "CASE",
-        Bracketed(
-            Ref("LocalVariableNameSegment"),
-        ),
-    )
-
-
-class TestWhen(BaseSegment):
-    type = "test_when"
-    match_grammar = Sequence(
-        AnyNumberOf(
-            Sequence(
-                "WHEN",
-                OneOf(
-                    Ref("LiteralGrammar"),
-                ),
-                "THEN",
-                AnyNumberOf(
-                    Ref("StatementSegment"),
-                ),
-            ),
-        ),
-        Sequence(
-            "ELSE",
-            AnyNumberOf(
-                Ref("StatementSegment"),
-                min_times=1,
-            ),
-            optional=True,
-        ),
     )
 
 
@@ -10198,7 +10041,10 @@ class SearchedCaseSegment(BaseSegment):
 
 
 class ScriptingWhileSegment(BaseSegment):
+    """A while segment used in Snowflake Scripts."""
+
     type = "while_segment"
+
     match_grammar = Sequence(
         "WHILE",
         Bracketed(
@@ -10224,6 +10070,8 @@ class ScriptingWhileSegment(BaseSegment):
 
 
 class ScriptingRepeatSegment(BaseSegment):
+    """A scripting repeat segment."""
+
     type = "repeat_segment"
     match_grammar = Sequence(
         "REPEAT",
@@ -10246,6 +10094,8 @@ class ScriptingRepeatSegment(BaseSegment):
 
 
 class AwaitSegment(BaseSegment):
+    """A scripting await segment."""
+
     type = "await_segment"
     match_grammar = Sequence(
         "AWAIT",
@@ -10254,6 +10104,8 @@ class AwaitSegment(BaseSegment):
 
 
 class BreakSegment(BaseSegment):
+    """A scripting break segment."""
+
     type = "break_segment"
     match_grammar = Sequence(
         OneOf(
@@ -10265,6 +10117,8 @@ class BreakSegment(BaseSegment):
 
 
 class CancelSegment(BaseSegment):
+    """A scripting cancel segment."""
+
     type = "cancel_segment"
     match_grammar = Sequence(
         "CANCEL",
@@ -10273,6 +10127,8 @@ class CancelSegment(BaseSegment):
 
 
 class CloseSegment(BaseSegment):
+    """A scripting close segment."""
+
     type = "close_segment"
     match_grammar = Sequence(
         "CLOSE",
@@ -10281,6 +10137,8 @@ class CloseSegment(BaseSegment):
 
 
 class ContinueSegment(BaseSegment):
+    """A scripting continue segment."""
+
     type = "continue_segment"
     match_grammar = Sequence(
         OneOf(
@@ -10292,6 +10150,8 @@ class ContinueSegment(BaseSegment):
 
 
 class FetchSegment(BaseSegment):
+    """A scripting fetch segment."""
+
     type = "fetch_segment"
     match_grammar = Sequence(
         "FETCH",
@@ -10302,11 +10162,15 @@ class FetchSegment(BaseSegment):
 
 
 class NullSegment(BaseSegment):
+    """A scripting null segment."""
+
     type = "null_segment"
     match_grammar = Sequence("NULL")
 
 
 class OpenSegment(BaseSegment):
+    """A scripting open segment."""
+
     type = "open_segment"
     match_grammar = Sequence(
         "OPEN",
@@ -10324,6 +10188,8 @@ class OpenSegment(BaseSegment):
 
 
 class RaiseSegment(BaseSegment):
+    """A scripting raise segment."""
+
     type = "raise_segment"
     match_grammar = Sequence(
         "RAISE",
@@ -10332,6 +10198,8 @@ class RaiseSegment(BaseSegment):
 
 
 class ReturnSegment(BaseSegment):
+    """A scripting return segment."""
+
     type = "return_segment"
     match_grammar = Sequence(
         "RETURNS",
@@ -10346,6 +10214,8 @@ class ReturnSegment(BaseSegment):
 
 
 class ArrayConstructSegment(BaseSegment):
+    """A scripting array construct segment."""
+
     type = "array_construct_segment"
     match_grammar = Sequence(
         "ARRAY_CONSTRUCT",
@@ -10356,6 +10226,8 @@ class ArrayConstructSegment(BaseSegment):
 
 
 class CastSegment(BaseSegment):
+    """A scripting cast segment."""
+
     type = "cast_segment"
     match_grammar = Sequence(
         "CAST",
@@ -10366,15 +10238,15 @@ class CastSegment(BaseSegment):
                 Ref("ExpressionSegment"),
             ),
         ),
-        # OneOf(
-        #     Sequence(
-        #         "RENAME",
-        #         "FIELDS",
-        #     ),
-        #     Sequence(
-        #         "ADD",
-        #         "FIELDS",
-        #     ),
-        #     optional=True,
-        # ),
+        OneOf(
+            Sequence(
+                "RENAME",
+                "FIELDS",
+            ),
+            Sequence(
+                "ADD",
+                "FIELDS",
+            ),
+            optional=True,
+        ),
     )
