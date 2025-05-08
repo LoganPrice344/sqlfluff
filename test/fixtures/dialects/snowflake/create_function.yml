@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 011a520581ff1e1de0d2ea932c3751c0aefdb3f6d40f76641bf80c214f8d2f1c
+_hash: 051f5ddc0f03c966a29e255acc0b67126840e335f08343c8f91711a4788e994c
 file:
 - statement:
     create_function_statement:
@@ -46,7 +46,19 @@ file:
             data_type_identifier: INTEGER
       - end_bracket: )
     - keyword: AS
-    - udf_body: "$$\n    SELECT 1, 2\n    UNION ALL\n    SELECT 3, 4\n  $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: SELECT
+      - numeric_literal: '1'
+      - comma: ','
+      - numeric_literal: '2'
+      - word: UNION
+      - word: ALL
+      - word: SELECT
+      - numeric_literal: '3'
+      - comma: ','
+      - numeric_literal: '4'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -142,7 +154,19 @@ file:
     - keyword: LANGUAGE
     - keyword: SQL
     - keyword: AS
-    - udf_body: "$$\n    SELECT 1, 2\n    UNION ALL\n    SELECT 3, 4\n  $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: SELECT
+      - numeric_literal: '1'
+      - comma: ','
+      - numeric_literal: '2'
+      - word: UNION
+      - word: ALL
+      - word: SELECT
+      - numeric_literal: '3'
+      - comma: ','
+      - numeric_literal: '4'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -254,9 +278,41 @@ file:
         raw_comparison_operator: '='
     - quoted_literal: "'udf'"
     - keyword: as
-    - udf_body: "$$\nimport numpy as np\nimport pandas as pd\nimport xgboost as xgb\n\
-        def udf():\n    return [np.__version__, pd.__version__, xgb.__version__]\n\
-        $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: import
+      - word: numpy
+      - word: as
+      - word: np
+      - word: import
+      - word: pandas
+      - word: as
+      - word: pd
+      - word: import
+      - word: xgboost
+      - word: as
+      - word: xgb
+      - word: def
+      - word: udf
+      - bracketed:
+          start_bracket: (
+          end_bracket: )
+      - colon: ':'
+      - word: return
+      - start_square_bracket: '['
+      - word: np
+      - dot: .
+      - word: __version__
+      - comma: ','
+      - word: pd
+      - dot: .
+      - word: __version__
+      - comma: ','
+      - word: xgb
+      - dot: .
+      - word: __version__
+      - end_square_bracket: ']'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -323,7 +379,20 @@ file:
         raw_comparison_operator: '='
     - quoted_literal: "'addone_py'"
     - keyword: as
-    - udf_body: "$$\ndef addone_py(i):\n  return i+1\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: def
+      - word: addone_py
+      - bracketed:
+          start_bracket: (
+          word: i
+          end_bracket: )
+      - colon: ':'
+      - word: return
+      - word: i
+      - plus: +
+      - numeric_literal: '1'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -354,8 +423,28 @@ file:
         raw_comparison_operator: '='
     - quoted_literal: "'Echo.echoVarchar'"
     - keyword: AS
-    - udf_body: "$$\nclass Echo {\n  def echoVarchar(x : String): String = {\n   \
-        \ return x\n  }\n}\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: class
+      - word: Echo
+      - start_curly_bracket: '{'
+      - word: def
+      - word: echoVarchar
+      - bracketed:
+        - start_bracket: (
+        - word: x
+        - colon: ':'
+        - word: String
+        - end_bracket: )
+      - colon: ':'
+      - word: String
+      - equals: '='
+      - start_curly_bracket: '{'
+      - word: return
+      - word: x
+      - end_curly_bracket: '}'
+      - end_curly_bracket: '}'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -425,12 +514,97 @@ file:
       - naked_identifier: AWS_SECRET_KEY
       - end_bracket: )
     - keyword: AS
-    - udf_body: "$$\nimport _snowflake\nimport requests\nimport json\nsession = requests.Session()\n\
-        def get_translation(sentence, language):\n  token = _snowflake.get_oauth_access_token('cred')\n\
-        \  url = \"https://translation.googleapis.com/language/translate/v2\"\n  data\
-        \ = {'q': sentence,'target': language}\n  response = session.post(url, json\
-        \ = data, headers = {\"Authorization\": \"Bearer \" + token})\n  return response.json()['data']['translations'][0]['translatedText']\n\
-        $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: import
+      - word: _snowflake
+      - word: import
+      - word: requests
+      - word: import
+      - word: json
+      - word: session
+      - equals: '='
+      - word: requests
+      - dot: .
+      - word: Session
+      - bracketed:
+          start_bracket: (
+          end_bracket: )
+      - word: def
+      - word: get_translation
+      - bracketed:
+        - start_bracket: (
+        - word: sentence
+        - comma: ','
+        - word: language
+        - end_bracket: )
+      - colon: ':'
+      - word: token
+      - equals: '='
+      - word: _snowflake
+      - dot: .
+      - word: get_oauth_access_token
+      - bracketed:
+          start_bracket: (
+          single_quote: "'cred'"
+          end_bracket: )
+      - word: url
+      - equals: '='
+      - double_quote: '"https://translation.googleapis.com/language/translate/v2"'
+      - word: data
+      - equals: '='
+      - start_curly_bracket: '{'
+      - single_quote: "'q'"
+      - colon: ':'
+      - word: sentence
+      - comma: ','
+      - single_quote: "'target'"
+      - colon: ':'
+      - word: language
+      - end_curly_bracket: '}'
+      - word: response
+      - equals: '='
+      - word: session
+      - dot: .
+      - word: post
+      - bracketed:
+        - start_bracket: (
+        - word: url
+        - comma: ','
+        - word: json
+        - equals: '='
+        - word: data
+        - comma: ','
+        - word: headers
+        - equals: '='
+        - start_curly_bracket: '{'
+        - double_quote: '"Authorization"'
+        - colon: ':'
+        - double_quote: '"Bearer "'
+        - plus: +
+        - word: token
+        - end_curly_bracket: '}'
+        - end_bracket: )
+      - word: return
+      - word: response
+      - dot: .
+      - word: json
+      - bracketed:
+          start_bracket: (
+          end_bracket: )
+      - start_square_bracket: '['
+      - single_quote: "'data'"
+      - end_square_bracket: ']'
+      - start_square_bracket: '['
+      - single_quote: "'translations'"
+      - end_square_bracket: ']'
+      - start_square_bracket: '['
+      - numeric_literal: '0'
+      - end_square_bracket: ']'
+      - start_square_bracket: '['
+      - single_quote: "'translatedText'"
+      - end_square_bracket: ']'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -462,7 +636,20 @@ file:
         raw_comparison_operator: '='
     - quoted_literal: "'addone_py'"
     - keyword: as
-    - udf_body: "$$\ndef addone_py(i):\n  return i+1\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: def
+      - word: addone_py
+      - bracketed:
+          start_bracket: (
+          word: i
+          end_bracket: )
+      - colon: ':'
+      - word: return
+      - word: i
+      - plus: +
+      - numeric_literal: '1'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_function_statement:
@@ -499,9 +686,36 @@ file:
     - keyword: LANGUAGE
     - keyword: SQL
     - keyword: AS
-    - udf_body: "$$\nSELECT\n        CASE\n            WHEN (LOWER(COL_1) IS NOT NULL\
-        \ AND\n                        LOWER(COL_2) = 'test_marketing')\n        \
-        \        THEN 'marketing_channel'\n            ELSE '(Other)'\nEND\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: SELECT
+      - word: CASE
+      - word: WHEN
+      - bracketed:
+        - start_bracket: (
+        - word: LOWER
+        - bracketed:
+            start_bracket: (
+            word: COL_1
+            end_bracket: )
+        - word: IS
+        - word: NOT
+        - word: 'NULL'
+        - word: AND
+        - word: LOWER
+        - bracketed:
+            start_bracket: (
+            word: COL_2
+            end_bracket: )
+        - equals: '='
+        - single_quote: "'test_marketing'"
+        - end_bracket: )
+      - word: THEN
+      - single_quote: "'marketing_channel'"
+      - word: ELSE
+      - single_quote: "'(Other)'"
+      - word: END
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement_terminator: ;
 - statement:

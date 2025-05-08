@@ -3,133 +3,306 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 773d46c9822264c11a50e66320e345bd3253d204df2f380934c05a4ef8213003
+_hash: adf9902b2c06bafa7fd9e9c63dbf9116730589b32850e701ece104c4fa308e4c
 file:
 - statement:
-    scripting_declare_statement:
-    - keyword: DECLARE
-    - variable: profit
-    - data_type:
-        data_type_identifier: number
-        bracketed_arguments:
-          bracketed:
-          - start_bracket: (
-          - numeric_literal: '38'
-          - comma: ','
-          - numeric_literal: '2'
-          - end_bracket: )
-    - keyword: DEFAULT
-    - expression:
-        numeric_literal: '0.0'
-    - statement_terminator: ;
-    - variable: revenue
-    - data_type:
-        data_type_identifier: number
-        bracketed_arguments:
-          bracketed:
-          - start_bracket: (
-          - numeric_literal: '38'
-          - comma: ','
-          - numeric_literal: '2'
-          - end_bracket: )
-    - keyword: DEFAULT
-    - expression:
-        numeric_literal: '110.0'
-    - statement_terminator: ;
-    - variable: c1
-    - keyword: CURSOR
-    - keyword: FOR
-    - select_statement:
-        select_clause:
-          keyword: SELECT
-          select_clause_element:
-            column_reference:
-              naked_identifier: price
-        from_clause:
-          keyword: FROM
-          from_expression:
-            from_expression_element:
-              table_expression:
-                table_reference:
-                  naked_identifier: invoices
-    - statement_terminator: ;
-    - variable: myexception
-    - keyword: EXCEPTION
-    - bracketed:
-        start_bracket: (
-        sign_indicator: '-'
-        exception_code: '20000'
-        comma: ','
-        quoted_literal: "'my first exception'"
-        end_bracket: )
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: profit
+      - data_type:
+          data_type_identifier: number
+          bracketed_arguments:
+            bracketed:
+            - start_bracket: (
+            - numeric_literal: '38'
+            - comma: ','
+            - numeric_literal: '2'
+            - end_bracket: )
+      - keyword: DEFAULT
+      - expression:
+          numeric_literal: '0.0'
+      - statement_terminator: ;
+      - variable: revenue
+      - data_type:
+          data_type_identifier: number
+          bracketed_arguments:
+            bracketed:
+            - start_bracket: (
+            - numeric_literal: '38'
+            - comma: ','
+            - numeric_literal: '2'
+            - end_bracket: )
+      - keyword: DEFAULT
+      - expression:
+          numeric_literal: '110.0'
+      - statement_terminator: ;
+      - variable: c1
+      - keyword: CURSOR
+      - keyword: FOR
+      - select_statement:
+          select_clause:
+            keyword: SELECT
+            select_clause_element:
+              column_reference:
+                naked_identifier: price
+          from_clause:
+            keyword: FROM
+            from_expression:
+              from_expression_element:
+                table_expression:
+                  table_reference:
+                    naked_identifier: invoices
+      - statement_terminator: ;
+      - variable: myexception
+      - data_type:
+          data_type_identifier: EXCEPTION
+          bracketed_arguments:
+            bracketed:
+              start_bracket: (
+              numeric_literal:
+                sign_indicator: '-'
+                numeric_literal: '20000'
+              comma: ','
+              quoted_literal: "'my first exception'"
+              end_bracket: )
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: profit
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1.0'
+        - statement_terminator: ;
+        - keyword: END
 - statement_terminator: ;
 - statement:
-    scripting_block_statement:
-    - keyword: BEGIN
-    - statement:
-        scripting_let_statement:
-          variable: profit
-          assignment_operator: :=
-          expression:
-            numeric_literal: '1.0'
-    - statement_terminator: ;
-    - keyword: END
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: res
+      - data_type:
+          data_type_identifier: RESULTSET
+      - keyword: DEFAULT
+      - expression:
+          bracketed:
+            start_bracket: (
+            expression:
+              select_statement:
+                select_clause:
+                  keyword: SELECT
+                  select_clause_element:
+                    column_reference:
+                      naked_identifier: price
+                from_clause:
+                  keyword: FROM
+                  from_expression:
+                    from_expression_element:
+                      table_expression:
+                        table_reference:
+                          naked_identifier: invoices
+            end_bracket: )
+      - statement_terminator: ;
+      - variable: c1
+      - keyword: CURSOR
+      - keyword: FOR
+      - variable: res
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: c1
+        - statement_terminator: ;
+        - keyword: END
 - statement_terminator: ;
 - statement:
-    scripting_declare_statement:
-    - keyword: DECLARE
-    - variable: res
-    - data_type:
-        data_type_identifier: RESULTSET
-    - keyword: DEFAULT
-    - expression:
-        bracketed:
-          start_bracket: (
-          expression:
-            select_statement:
-              select_clause:
-                keyword: SELECT
-                select_clause_element:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: profit
+      - data_type:
+          data_type_identifier: number
+          bracketed_arguments:
+            bracketed:
+            - start_bracket: (
+            - numeric_literal: '38'
+            - comma: ','
+            - numeric_literal: '2'
+            - end_bracket: )
+      - keyword: DEFAULT
+      - expression:
+          numeric_literal: '0.0'
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: i
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            scripting_let_statement:
+              variable: j
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            while_segment:
+            - keyword: WHILE
+            - bracketed:
+                start_bracket: (
+                expression:
                   column_reference:
-                    naked_identifier: price
-              from_clause:
-                keyword: FROM
-                from_expression:
-                  from_expression_element:
-                    table_expression:
-                      table_reference:
-                        naked_identifier: invoices
-          end_bracket: )
-    - statement_terminator: ;
-    - variable: c1
-    - keyword: CURSOR
-    - keyword: FOR
-    - variable: res
-- statement_terminator: ;
-- statement:
-    scripting_block_statement:
-    - keyword: BEGIN
-    - statement:
-        return_statement:
-          keyword: RETURN
-          expression:
-            column_reference:
-              naked_identifier: c1
-    - statement_terminator: ;
-    - keyword: END
+                    naked_identifier: i
+                  comparison_operator:
+                  - raw_comparison_operator: <
+                  - raw_comparison_operator: '='
+                  numeric_literal: '4'
+                end_bracket: )
+            - keyword: DO
+            - statement:
+                while_segment:
+                - keyword: WHILE
+                - bracketed:
+                    start_bracket: (
+                    expression:
+                      column_reference:
+                        naked_identifier: j
+                      comparison_operator:
+                      - raw_comparison_operator: <
+                      - raw_comparison_operator: '='
+                      numeric_literal: '4'
+                    end_bracket: )
+                - keyword: DO
+                - statement:
+                    if_statement:
+                    - keyword: IF
+                    - bracketed:
+                        start_bracket: (
+                        expression:
+                          column_reference:
+                            naked_identifier: j
+                          comparison_operator:
+                            raw_comparison_operator: '='
+                          numeric_literal: '3'
+                        end_bracket: )
+                    - keyword: THEN
+                    - break_segment:
+                        keyword: BREAK
+                        object_reference:
+                          naked_identifier: outer_loop
+                    - statement_terminator: ;
+                    - keyword: END
+                    - keyword: IF
+                - statement_terminator: ;
+                - statement:
+                    scripting_let_statement:
+                      variable: j
+                      assignment_operator: :=
+                      expression:
+                        column_reference:
+                          naked_identifier: j
+                        binary_operator: +
+                        numeric_literal: '1'
+                - statement_terminator: ;
+                - keyword: END
+                - keyword: WHILE
+                - table_reference:
+                    naked_identifier: inner_loop
+            - statement_terminator: ;
+            - statement:
+                scripting_let_statement:
+                  variable: i
+                  assignment_operator: :=
+                  expression:
+                    column_reference:
+                      naked_identifier: i
+                    binary_operator: +
+                    numeric_literal: '1'
+            - statement_terminator: ;
+            - keyword: END
+            - keyword: WHILE
+            - table_reference:
+                naked_identifier: outer_loop
+        - statement_terminator: ;
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: i
+        - statement_terminator: ;
+        - keyword: END
 - statement_terminator: ;
 - statement:
     scripting_declare_statement:
-    - keyword: DECLARE
-    - variable: res
-    - keyword: RESULTSET
+      keyword: DECLARE
+      variable: res
+      data_type:
+        data_type_identifier: RESULTSET
+      statement_terminator: ;
+      scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;
 - statement:
     scripting_declare_statement:
-    - keyword: DECLARE
-    - variable: res
-    - keyword: RESULTSET
-    - keyword: DEFAULT
+      keyword: DECLARE
+      variable: res
+      parameter: RESULTSET
+      data_type:
+        data_type_identifier: DEFAULT
+      statement_terminator: ;
+      scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;
 - statement:
     scripting_declare_statement:
@@ -165,6 +338,26 @@ file:
                   - column_reference:
                       naked_identifier: a
               end_bracket: )
+    - statement_terminator: ;
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;
 - statement:
     scripting_declare_statement:
@@ -196,6 +389,26 @@ file:
               - column_reference:
                   naked_identifier: a
           end_bracket: )
+      statement_terminator: ;
+      scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;
 - statement:
     scripting_declare_statement:
@@ -231,4 +444,24 @@ file:
                   - column_reference:
                       naked_identifier: a
               end_bracket: )
+      statement_terminator: ;
+      scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;

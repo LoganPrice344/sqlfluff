@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 1ca9db288da966294c367b66520efd39f44c92b8d1c57de00810cec46e02ab93
+_hash: 1094e4d2aee8247530cea147643d1bd6683ce58bd48fe9ab5d52ca394fae46bb
 file:
 - statement:
     exception_block_statement:
@@ -29,6 +29,45 @@ file:
           expression:
             column_reference:
               naked_identifier: SQLERRM
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          cancel_segment:
+            keyword: CANCEL
+            object_reference:
+              naked_identifier: my_result_set
+      - statement_terminator: ;
+      - statement:
+          exception_block_statement:
+          - keyword: EXCEPTION
+          - keyword: WHEN
+          - object_reference:
+              naked_identifier: EXCEPTION_2
+          - keyword: THEN
+          - statement:
+              return_statement:
+                keyword: RETURN
+                expression:
+                  column_reference:
+                    naked_identifier: SQLERRM
+          - statement_terminator: ;
+          - keyword: WHEN
+          - object_reference:
+              naked_identifier: EXCEPTION_1
+          - keyword: THEN
+          - statement:
+              return_statement:
+                keyword: RETURN
+                expression:
+                  column_reference:
+                    naked_identifier: SQLERRM
+      - statement_terminator: ;
+      - keyword: END
 - statement_terminator: ;
 - statement:
     exception_block_statement:

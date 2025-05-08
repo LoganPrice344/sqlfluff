@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 6847a028964c21715a4a2028dda8526e55c1486313a7de70e74b84c54a015d59
+_hash: 008cdfed0726f654189359b6d3c1d601b60749f7eb4367cdb9f4e917dd9a84b2
 file:
 - statement:
     select_statement:
@@ -127,9 +127,13 @@ file:
           naked_identifier: i
       limit_clause:
       - keyword: limit
-      - quoted_literal: $$$$
+      - test_dollar_quote:
+        - raw_dollar_quote: $$
+        - raw_dollar_quote: $$
       - keyword: offset
-      - quoted_literal: $$$$
+      - test_dollar_quote:
+        - raw_dollar_quote: $$
+        - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     select_statement:

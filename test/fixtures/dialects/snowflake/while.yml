@@ -1,0 +1,299 @@
+# YML test files are auto-generated from SQL files and should not be edited by
+# hand. To help enforce this, the "hash" field in the file must match a hash
+# computed by SQLFluff when running the tests. Please run
+# `python test/generate_parse_fixture_yml.py`  to generate them after adding or
+# altering SQL files.
+_hash: b8fa29c9516ac5ef642f0499519687ffb16f622200bab0b140d537e75fb8c189
+file:
+- statement:
+    create_procedure_statement:
+    - keyword: CREATE
+    - keyword: PROCEDURE
+    - function_name:
+        function_name_identifier: power_of_2
+    - function_parameter_list:
+        bracketed:
+          start_bracket: (
+          end_bracket: )
+    - keyword: RETURNS
+    - data_type:
+        data_type_identifier: NUMBER
+        bracketed_arguments:
+          bracketed:
+          - start_bracket: (
+          - numeric_literal: '8'
+          - comma: ','
+          - numeric_literal: '0'
+          - end_bracket: )
+    - keyword: LANGUAGE
+    - keyword: SQL
+    - keyword: AS
+    - raw_dollar_quote: $$
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: counter
+      - data_type:
+          data_type_identifier: NUMBER
+          bracketed_arguments:
+            bracketed:
+            - start_bracket: (
+            - numeric_literal: '8'
+            - comma: ','
+            - numeric_literal: '0'
+            - end_bracket: )
+      - statement_terminator: ;
+      - variable: power_of_2
+      - data_type:
+          data_type_identifier: NUMBER
+          bracketed_arguments:
+            bracketed:
+            - start_bracket: (
+            - numeric_literal: '8'
+            - comma: ','
+            - numeric_literal: '0'
+            - end_bracket: )
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: counter
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            scripting_let_statement:
+              variable: power_of_2
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            while_segment:
+            - keyword: WHILE
+            - bracketed:
+                start_bracket: (
+                expression:
+                  column_reference:
+                    naked_identifier: counter
+                  comparison_operator:
+                  - raw_comparison_operator: <
+                  - raw_comparison_operator: '='
+                  numeric_literal: '8'
+                end_bracket: )
+            - keyword: DO
+            - statement:
+                scripting_let_statement:
+                  variable: power_of_2
+                  assignment_operator: :=
+                  expression:
+                    column_reference:
+                      naked_identifier: power_of_2
+                    binary_operator: '*'
+                    numeric_literal: '2'
+            - statement_terminator: ;
+            - statement:
+                scripting_let_statement:
+                  variable: counter
+                  assignment_operator: :=
+                  expression:
+                    column_reference:
+                      naked_identifier: counter
+                    binary_operator: +
+                    numeric_literal: '1'
+            - statement_terminator: ;
+            - keyword: END
+            - keyword: WHILE
+        - statement_terminator: ;
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: power_of_2
+        - statement_terminator: ;
+        - keyword: END
+    - statement_terminator: ;
+    - raw_dollar_quote: $$
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          scripting_let_statement:
+            keyword: LET
+            variable: mydate
+            assignment_operator: :=
+            expression:
+              quoted_literal: "'2024-05-08'"
+      - statement_terminator: ;
+      - statement:
+          while_segment:
+          - keyword: WHILE
+          - bracketed:
+              start_bracket: (
+              expression:
+                column_reference:
+                  naked_identifier: mydate
+                comparison_operator:
+                  raw_comparison_operator: <
+                quoted_literal: "'2024-05-20'"
+              end_bracket: )
+          - keyword: DO
+          - statement:
+              scripting_let_statement:
+                variable: mydate
+                assignment_operator: :=
+                expression:
+                  function:
+                    function_name:
+                      function_name_identifier: DATEADD
+                    function_contents:
+                      bracketed:
+                      - start_bracket: (
+                      - date_part: day
+                      - comma: ','
+                      - expression:
+                          numeric_literal: '1'
+                      - comma: ','
+                      - expression:
+                          column_reference:
+                            naked_identifier: mydate
+                      - end_bracket: )
+          - statement_terminator: ;
+          - keyword: END
+          - keyword: LOOP
+      - statement_terminator: ;
+      - statement:
+          return_statement:
+            keyword: RETURN
+            expression:
+              column_reference:
+                naked_identifier: mydate
+      - statement_terminator: ;
+      - keyword: END
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          scripting_let_statement:
+            keyword: LET
+            variable: mydate
+            assignment_operator: :=
+            expression:
+              quoted_literal: "'2024-05-08'"
+      - statement_terminator: ;
+      - statement:
+          while_segment:
+          - keyword: WHILE
+          - bracketed:
+              start_bracket: (
+              expression:
+                column_reference:
+                  naked_identifier: mydate
+                comparison_operator:
+                  raw_comparison_operator: <
+                quoted_literal: "'2024-05-20'"
+              end_bracket: )
+          - keyword: LOOP
+          - statement:
+              scripting_let_statement:
+                variable: mydate
+                assignment_operator: :=
+                expression:
+                  function:
+                    function_name:
+                      function_name_identifier: DATEADD
+                    function_contents:
+                      bracketed:
+                      - start_bracket: (
+                      - date_part: day
+                      - comma: ','
+                      - expression:
+                          numeric_literal: '1'
+                      - comma: ','
+                      - expression:
+                          column_reference:
+                            naked_identifier: mydate
+                      - end_bracket: )
+          - statement_terminator: ;
+          - keyword: END
+          - keyword: WHILE
+      - statement_terminator: ;
+      - statement:
+          return_statement:
+            keyword: RETURN
+            expression:
+              column_reference:
+                naked_identifier: mydate
+      - statement_terminator: ;
+      - keyword: END
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          scripting_let_statement:
+            keyword: LET
+            variable: mydate
+            assignment_operator: :=
+            expression:
+              quoted_literal: "'2024-05-08'"
+      - statement_terminator: ;
+      - statement:
+          while_segment:
+          - keyword: WHILE
+          - bracketed:
+              start_bracket: (
+              expression:
+                column_reference:
+                  naked_identifier: mydate
+                comparison_operator:
+                  raw_comparison_operator: <
+                quoted_literal: "'2024-05-20'"
+              end_bracket: )
+          - keyword: LOOP
+          - statement:
+              scripting_let_statement:
+                variable: mydate
+                assignment_operator: :=
+                expression:
+                  function:
+                    function_name:
+                      function_name_identifier: DATEADD
+                    function_contents:
+                      bracketed:
+                      - start_bracket: (
+                      - date_part: day
+                      - comma: ','
+                      - expression:
+                          numeric_literal: '1'
+                      - comma: ','
+                      - expression:
+                          column_reference:
+                            naked_identifier: mydate
+                      - end_bracket: )
+          - statement_terminator: ;
+          - keyword: END
+          - keyword: LOOP
+      - statement_terminator: ;
+      - statement:
+          return_statement:
+            keyword: RETURN
+            expression:
+              column_reference:
+                naked_identifier: mydate
+      - statement_terminator: ;
+      - keyword: END
+- statement_terminator: ;

@@ -1,0 +1,116 @@
+# YML test files are auto-generated from SQL files and should not be edited by
+# hand. To help enforce this, the "hash" field in the file must match a hash
+# computed by SQLFluff when running the tests. Please run
+# `python test/generate_parse_fixture_yml.py`  to generate them after adding or
+# altering SQL files.
+_hash: 1fc9147a73ca2bffa7cabcf2cd2a7743f24d3c3784469179dc77875cbac761cb
+file:
+- statement:
+    create_procedure_statement:
+    - keyword: CREATE
+    - keyword: PROCEDURE
+    - function_name:
+        function_name_identifier: break_out_of_loop
+    - function_parameter_list:
+        bracketed:
+          start_bracket: (
+          end_bracket: )
+    - keyword: RETURNS
+    - data_type:
+        data_type_identifier: INTEGER
+    - keyword: LANGUAGE
+    - keyword: SQL
+    - keyword: AS
+    - raw_dollar_quote: $$
+    - scripting_declare_statement:
+        keyword: DECLARE
+        variable: counter
+        data_type:
+          data_type_identifier: INTEGER
+        statement_terminator: ;
+        scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: counter
+              assignment_operator: :=
+              expression:
+                numeric_literal: '0'
+        - statement_terminator: ;
+        - statement:
+            loop_statement_segment:
+            - keyword: LOOP
+            - statement:
+                scripting_let_statement:
+                  variable: counter
+                  assignment_operator: :=
+                  expression:
+                    column_reference:
+                      naked_identifier: counter
+                    binary_operator: +
+                    numeric_literal: '1'
+            - statement_terminator: ;
+            - statement:
+                if_statement:
+                - keyword: IF
+                - bracketed:
+                    start_bracket: (
+                    expression:
+                      column_reference:
+                        naked_identifier: counter
+                      comparison_operator:
+                        raw_comparison_operator: '>'
+                      numeric_literal: '5'
+                    end_bracket: )
+                - keyword: THEN
+                - break_segment:
+                    keyword: BREAK
+                - statement_terminator: ;
+                - keyword: END
+                - keyword: IF
+            - statement_terminator: ;
+            - keyword: END
+            - keyword: LOOP
+        - statement_terminator: ;
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: counter
+        - statement_terminator: ;
+        - keyword: END
+    - statement_terminator: ;
+    - raw_dollar_quote: $$
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          loop_statement_segment:
+          - keyword: LOOP
+          - statement:
+              select_statement:
+                select_clause:
+                  keyword: SELECT
+                  select_clause_element:
+                    wildcard_expression:
+                      wildcard_identifier:
+                        star: '*'
+                from_clause:
+                  keyword: FROM
+                  from_expression:
+                    from_expression_element:
+                      table_expression:
+                        table_reference:
+                          naked_identifier: my_table
+          - statement_terminator: ;
+          - keyword: END
+          - keyword: LOOP
+          - variable: loop_name
+      - statement_terminator: ;
+      - keyword: END
+- statement_terminator: ;

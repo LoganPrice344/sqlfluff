@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 63e7035b51a821c215f17c68f64f1c30d7da14b1c6aa549f64fa0d8ca1fd3ff2
+_hash: 71a8faa1a0d57f26c052b45fc7f5629dd59fcd9b8461bd4d54d1441e3b4ff655
 file:
 - statement:
     execute_immediate_clause:
@@ -15,7 +15,15 @@ file:
     execute_immediate_clause:
     - keyword: EXECUTE
     - keyword: IMMEDIATE
-    - quoted_literal: "$$\n  SELECT PI();\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: SELECT
+      - word: PI
+      - bracketed:
+          start_bracket: (
+          end_bracket: )
+      - semicolon: ;
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     set_statement:
@@ -24,7 +32,15 @@ file:
       comparison_operator:
         raw_comparison_operator: '='
       expression:
-        quoted_literal: "$$\n  SELECT PI();\n$$"
+        test_dollar_quote:
+        - raw_dollar_quote: $$
+        - word: SELECT
+        - word: PI
+        - bracketed:
+            start_bracket: (
+            end_bracket: )
+        - semicolon: ;
+        - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     set_statement:
@@ -76,15 +92,17 @@ file:
     execute_immediate_clause:
     - keyword: EXECUTE
     - keyword: IMMEDIATE
-    - colon: ':'
-    - variable: three
+    - bind_variable:
+        colon: ':'
+        variable: three
 - statement_terminator: ;
 - statement:
     execute_immediate_clause:
     - keyword: EXECUTE
     - keyword: IMMEDIATE
-    - colon: ':'
-    - variable: three
+    - bind_variable:
+        colon: ':'
+        variable: three
     - keyword: USING
     - bracketed:
       - start_bracket: (

@@ -1,0 +1,125 @@
+# YML test files are auto-generated from SQL files and should not be edited by
+# hand. To help enforce this, the "hash" field in the file must match a hash
+# computed by SQLFluff when running the tests. Please run
+# `python test/generate_parse_fixture_yml.py`  to generate them after adding or
+# altering SQL files.
+_hash: 55a5e42e488cab9167c1b399f38e6157a07cfe3fb8b578fe90f6a28b6e6d040c
+file:
+  statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: i
+      - data_type:
+          data_type_identifier: INTEGER
+      - statement_terminator: ;
+      - variable: j
+      - data_type:
+          data_type_identifier: INTEGER
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: i
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            scripting_let_statement:
+              variable: j
+              assignment_operator: :=
+              expression:
+                numeric_literal: '1'
+        - statement_terminator: ;
+        - statement:
+            while_segment:
+            - keyword: WHILE
+            - bracketed:
+                start_bracket: (
+                expression:
+                  column_reference:
+                    naked_identifier: i
+                  comparison_operator:
+                  - raw_comparison_operator: <
+                  - raw_comparison_operator: '='
+                  numeric_literal: '4'
+                end_bracket: )
+            - keyword: DO
+            - statement:
+                while_segment:
+                - keyword: WHILE
+                - bracketed:
+                    start_bracket: (
+                    expression:
+                      column_reference:
+                        naked_identifier: j
+                      comparison_operator:
+                      - raw_comparison_operator: <
+                      - raw_comparison_operator: '='
+                      numeric_literal: '4'
+                    end_bracket: )
+                - keyword: DO
+                - statement:
+                    if_statement:
+                    - keyword: IF
+                    - bracketed:
+                        start_bracket: (
+                        expression:
+                          column_reference:
+                            naked_identifier: j
+                          comparison_operator:
+                            raw_comparison_operator: '='
+                          numeric_literal: '3'
+                        end_bracket: )
+                    - keyword: THEN
+                    - break_segment:
+                        keyword: BREAK
+                        object_reference:
+                          naked_identifier: outer_loop
+                    - statement_terminator: ;
+                    - keyword: END
+                    - keyword: IF
+                - statement_terminator: ;
+                - statement:
+                    scripting_let_statement:
+                      variable: j
+                      assignment_operator: :=
+                      expression:
+                        column_reference:
+                          naked_identifier: j
+                        binary_operator: +
+                        numeric_literal: '1'
+                - statement_terminator: ;
+                - keyword: END
+                - keyword: WHILE
+                - table_reference:
+                    naked_identifier: inner_loop
+            - statement_terminator: ;
+            - statement:
+                scripting_let_statement:
+                  variable: i
+                  assignment_operator: :=
+                  expression:
+                    column_reference:
+                      naked_identifier: i
+                    binary_operator: +
+                    numeric_literal: '1'
+            - statement_terminator: ;
+            - keyword: END
+            - keyword: WHILE
+            - table_reference:
+                naked_identifier: outer_loop
+        - statement_terminator: ;
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: i
+        - statement_terminator: ;
+        - keyword: END
+  statement_terminator: ;

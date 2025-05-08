@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: 570a95e7a8b5293be09787d2f9b800d1394e4f8c0487435e9d63e4cab2d49351
+_hash: 3bfb4cf5e6b209f4aaf289ac293a81dff3f227b2caa7763d7c96b03e0518aecf
 file:
 - statement:
     create_procedure_statement:
@@ -25,7 +25,12 @@ file:
     - keyword: language
     - keyword: javascript
     - keyword: as
-    - udf_body: "$$\n    return 3.1415926;\n    $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: return
+      - numeric_literal: '3.1415926'
+      - semicolon: ;
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -52,12 +57,48 @@ file:
     - keyword: as
     - keyword: owner
     - keyword: as
-    - udf_body: "$$\n    var sql_command =\n     \"INSERT INTO stproc_test_table1\
-        \ (num_col1) VALUES (\" + FLOAT_PARAM1 + \")\";\n    try {\n        snowflake.execute\
-        \ (\n            {sqlText: sql_command}\n            );\n        return \"\
-        Succeeded.\";   // Return a success/error indicator.\n        }\n    catch\
-        \ (err)  {\n        return \"Failed: \" + err;   // Return a success/error\
-        \ indicator.\n        }\n    $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: var
+      - word: sql_command
+      - equals: '='
+      - double_quote: '"INSERT INTO stproc_test_table1 (num_col1) VALUES ("'
+      - plus: +
+      - word: FLOAT_PARAM1
+      - plus: +
+      - double_quote: '")"'
+      - semicolon: ;
+      - word: try
+      - start_curly_bracket: '{'
+      - word: snowflake
+      - dot: .
+      - word: execute
+      - bracketed:
+        - start_bracket: (
+        - start_curly_bracket: '{'
+        - word: sqlText
+        - colon: ':'
+        - word: sql_command
+        - end_curly_bracket: '}'
+        - end_bracket: )
+      - semicolon: ;
+      - word: return
+      - double_quote: '"Succeeded."'
+      - semicolon: ;
+      - end_curly_bracket: '}'
+      - word: catch
+      - bracketed:
+          start_bracket: (
+          word: err
+          end_bracket: )
+      - start_curly_bracket: '{'
+      - word: return
+      - double_quote: '"Failed: "'
+      - plus: +
+      - word: err
+      - semicolon: ;
+      - end_curly_bracket: '}'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -98,11 +139,54 @@ file:
     - keyword: LANGUAGE
     - keyword: JAVASCRIPT
     - keyword: AS
-    - udf_body: "$$\ntry {\n    var sql_command = \"ALTER TABLE \" + test_table +\
-        \ \" DROP \" + tet_col;\n    snowflake.execute ({sqlText: sql_command});\n\
-        \    return \"Succeeded.\";\n}\ncatch (err) {\n   return \"Failed: execute\
-        \ \"+ sql_command +\". Error : \"+ err;   // Return a success/error indicator.\n\
-        }\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: try
+      - start_curly_bracket: '{'
+      - word: var
+      - word: sql_command
+      - equals: '='
+      - double_quote: '"ALTER TABLE "'
+      - plus: +
+      - word: test_table
+      - plus: +
+      - double_quote: '" DROP "'
+      - plus: +
+      - word: tet_col
+      - semicolon: ;
+      - word: snowflake
+      - dot: .
+      - word: execute
+      - bracketed:
+        - start_bracket: (
+        - start_curly_bracket: '{'
+        - word: sqlText
+        - colon: ':'
+        - word: sql_command
+        - end_curly_bracket: '}'
+        - end_bracket: )
+      - semicolon: ;
+      - word: return
+      - double_quote: '"Succeeded."'
+      - semicolon: ;
+      - end_curly_bracket: '}'
+      - word: catch
+      - bracketed:
+          start_bracket: (
+          word: err
+          end_bracket: )
+      - start_curly_bracket: '{'
+      - word: return
+      - double_quote: '"Failed: execute "'
+      - plus: +
+      - word: sql_command
+      - plus: +
+      - double_quote: '". Error : "'
+      - plus: +
+      - word: err
+      - semicolon: ;
+      - end_curly_bracket: '}'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -129,7 +213,12 @@ file:
     - keyword: LANGUAGE
     - keyword: JAVASCRIPT
     - keyword: AS
-    - udf_body: "$$\n    return 1;\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: return
+      - numeric_literal: '1'
+      - semicolon: ;
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -151,7 +240,14 @@ file:
     - data_type:
         data_type_identifier: INT
     - keyword: AS
-    - udf_body: "$$\nBEGIN\n    RETURN 1;\nEND\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: BEGIN
+      - word: RETURN
+      - numeric_literal: '1'
+      - semicolon: ;
+      - word: END
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -175,7 +271,17 @@ file:
     - keyword: LANGUAGE
     - keyword: SQL
     - keyword: AS
-    - udf_body: "$$\nBEGIN\n    RETURN 1;\nEND\n$$"
+    - raw_dollar_quote: $$
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          return_statement:
+            keyword: RETURN
+            expression:
+              numeric_literal: '1'
+      - statement_terminator: ;
+      - keyword: END
+    - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -223,9 +329,41 @@ file:
           raw_comparison_operator: '='
         quoted_literal: "'hello_world'"
     - keyword: as
-    - udf_body: "$$\nimport numpy as np\nimport pandas as pd\nimport xgboost as xgb\n\
-        def udf():\n    return [np.__version__, pd.__version__, xgb.__version__]\n\
-        $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: import
+      - word: numpy
+      - word: as
+      - word: np
+      - word: import
+      - word: pandas
+      - word: as
+      - word: pd
+      - word: import
+      - word: xgboost
+      - word: as
+      - word: xgb
+      - word: def
+      - word: udf
+      - bracketed:
+          start_bracket: (
+          end_bracket: )
+      - colon: ':'
+      - word: return
+      - start_square_bracket: '['
+      - word: np
+      - dot: .
+      - word: __version__
+      - comma: ','
+      - word: pd
+      - dot: .
+      - word: __version__
+      - comma: ','
+      - word: xgb
+      - dot: .
+      - word: __version__
+      - end_square_bracket: ']'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -307,11 +445,79 @@ file:
         raw_comparison_operator: '='
     - quoted_literal: "'Filter.filterByRole'"
     - keyword: AS
-    - udf_body: "$$\nimport com.snowflake.snowpark.functions._\nimport com.snowflake.snowpark._\n\
-        \nobject Filter {\n    def filterByRole(session: Session, tableName: String,\
-        \ role: String): DataFrame = {\n        val table = session.table(tableName)\n\
-        \        val filteredRows = table.filter(col(\"role\") === role)\n       \
-        \ return filteredRows\n    }\n}\n$$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: import
+      - word: com
+      - dot: .
+      - word: snowflake
+      - dot: .
+      - word: snowpark
+      - dot: .
+      - word: functions
+      - dot: .
+      - word: _
+      - word: import
+      - word: com
+      - dot: .
+      - word: snowflake
+      - dot: .
+      - word: snowpark
+      - dot: .
+      - word: _
+      - word: object
+      - word: Filter
+      - start_curly_bracket: '{'
+      - word: def
+      - word: filterByRole
+      - bracketed:
+        - start_bracket: (
+        - word: session
+        - colon: ':'
+        - word: Session
+        - comma: ','
+        - word: tableName
+        - colon: ':'
+        - word: String
+        - comma: ','
+        - word: role
+        - colon: ':'
+        - word: String
+        - end_bracket: )
+      - colon: ':'
+      - word: DataFrame
+      - equals: '='
+      - start_curly_bracket: '{'
+      - word: val
+      - word: table
+      - equals: '='
+      - word: session
+      - dot: .
+      - word: table
+      - start_bracket: (
+      - word: tableName
+      - end_bracket: )
+      - word: val
+      - word: filteredRows
+      - equals: '='
+      - word: table
+      - dot: .
+      - word: filter
+      - start_bracket: (
+      - word: col
+      - start_bracket: (
+      - double_quote: '"role"'
+      - end_bracket: )
+      - equals: '='
+      - equals: '='
+      - equals: '='
+      - word: role
+      - end_bracket: )
+      - word: return
+      - word: filteredRows
+      - end_curly_bracket: '}'
+      - end_curly_bracket: '}'
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -341,9 +547,55 @@ file:
     - keyword: LANGUAGE
     - keyword: SQL
     - keyword: AS
-    - udf_body: "$$\n-- Snowflake Scripting code\nDECLARE\nradius_of_circle FLOAT;\n\
-        area_of_circle FLOAT;\nBEGIN\nradius_of_circle := 3;\narea_of_circle := pi()\
-        \ * radius_of_circle * radius_of_circle;\nRETURN area_of_circle;\nEND;\n$$"
+    - raw_dollar_quote: $$
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: radius_of_circle
+      - data_type:
+          data_type_identifier: FLOAT
+      - statement_terminator: ;
+      - variable: area_of_circle
+      - data_type:
+          data_type_identifier: FLOAT
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: radius_of_circle
+              assignment_operator: :=
+              expression:
+                numeric_literal: '3'
+        - statement_terminator: ;
+        - statement:
+            scripting_let_statement:
+              variable: area_of_circle
+              assignment_operator: :=
+              expression:
+              - function:
+                  function_name:
+                    function_name_identifier: pi
+                  function_contents:
+                    bracketed:
+                      start_bracket: (
+                      end_bracket: )
+              - binary_operator: '*'
+              - column_reference:
+                  naked_identifier: radius_of_circle
+              - binary_operator: '*'
+              - column_reference:
+                  naked_identifier: radius_of_circle
+        - statement_terminator: ;
+        - statement:
+            return_statement:
+              keyword: RETURN
+              expression:
+                column_reference:
+                  naked_identifier: area_of_circle
+        - statement_terminator: ;
+        - keyword: END
+    - statement_terminator: ;
+    - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:

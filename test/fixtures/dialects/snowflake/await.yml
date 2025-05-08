@@ -1,0 +1,90 @@
+# YML test files are auto-generated from SQL files and should not be edited by
+# hand. To help enforce this, the "hash" field in the file must match a hash
+# computed by SQLFluff when running the tests. Please run
+# `python test/generate_parse_fixture_yml.py`  to generate them after adding or
+# altering SQL files.
+_hash: 3a233dc4c51216a468a4b068c4fe47bc5ea181d6274883cb066986a95f06a623
+file:
+- statement:
+    scripting_block_statement:
+    - keyword: BEGIN
+    - statement:
+        scripting_let_statement:
+          keyword: LET
+          variable: res
+          data_type:
+            data_type_identifier: RESULTSET
+          assignment_operator: :=
+          expression:
+            function:
+              function_name:
+                function_name_identifier: ASYNC
+              function_contents:
+                bracketed:
+                  start_bracket: (
+                  expression:
+                    select_statement:
+                      select_clause:
+                        keyword: SELECT
+                        select_clause_element:
+                          wildcard_expression:
+                            wildcard_identifier:
+                              star: '*'
+                      from_clause:
+                        keyword: FROM
+                        from_expression:
+                          from_expression_element:
+                            table_expression:
+                              table_reference:
+                                naked_identifier: invalid_table
+                  end_bracket: )
+    - statement_terminator: ;
+    - statement:
+        await_segment:
+          keyword: AWAIT
+          object_reference:
+            naked_identifier: res
+    - statement_terminator: ;
+    - keyword: END
+- statement_terminator: ;
+- statement:
+    scripting_block_statement:
+    - keyword: BEGIN
+    - statement:
+        scripting_let_statement:
+          keyword: LET
+          variable: res
+          data_type:
+            data_type_identifier: RESULTSET
+          assignment_operator: :=
+          expression:
+            function:
+              function_name:
+                function_name_identifier: ASYNC
+              function_contents:
+                bracketed:
+                  start_bracket: (
+                  expression:
+                    select_statement:
+                      select_clause:
+                        keyword: SELECT
+                        select_clause_element:
+                          wildcard_expression:
+                            wildcard_identifier:
+                              star: '*'
+                      from_clause:
+                        keyword: FROM
+                        from_expression:
+                          from_expression_element:
+                            table_expression:
+                              table_reference:
+                                naked_identifier: invalid_table
+                  end_bracket: )
+    - statement_terminator: ;
+    - statement:
+        await_segment:
+        - keyword: AWAIT
+        - keyword: ALL
+    - statement_terminator: ;
+    - keyword: END
+- statement_terminator: ;

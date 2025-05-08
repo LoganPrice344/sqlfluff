@@ -1,0 +1,355 @@
+# YML test files are auto-generated from SQL files and should not be edited by
+# hand. To help enforce this, the "hash" field in the file must match a hash
+# computed by SQLFluff when running the tests. Please run
+# `python test/generate_parse_fixture_yml.py`  to generate them after adding or
+# altering SQL files.
+_hash: 9be1bbb41db9bc90af4fcc910c01022cdf6353cb20fef2568dc54d0fea603ea2
+file:
+- statement:
+    create_procedure_statement:
+    - keyword: CREATE
+    - keyword: PROCEDURE
+    - function_name:
+        function_name_identifier: case_demo_01
+    - function_parameter_list:
+        bracketed:
+          start_bracket: (
+          parameter: v
+          data_type:
+            data_type_identifier: VARCHAR
+          end_bracket: )
+    - keyword: RETURNS
+    - data_type:
+        data_type_identifier: VARCHAR
+    - keyword: LANGUAGE
+    - keyword: SQL
+    - keyword: AS
+    - raw_dollar_quote: $$
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          simple_case_segment:
+          - keyword: CASE
+          - bracketed:
+              start_bracket: (
+              variable: v
+              end_bracket: )
+          - keyword: WHEN
+          - quoted_literal: "'first choice'"
+          - keyword: THEN
+          - statement:
+              return_statement:
+                keyword: RETURN
+                expression:
+                  quoted_literal: "'one'"
+          - statement_terminator: ;
+          - keyword: WHEN
+          - quoted_literal: "'second choice'"
+          - keyword: THEN
+          - statement:
+              return_statement:
+                keyword: RETURN
+                expression:
+                  quoted_literal: "'two'"
+          - statement_terminator: ;
+          - keyword: ELSE
+          - statement:
+              return_statement:
+                keyword: RETURN
+                expression:
+                  quoted_literal: "'unexpected choice'"
+          - statement_terminator: ;
+          - keyword: END
+          - keyword: CASE
+      - statement_terminator: ;
+      - keyword: END
+    - statement_terminator: ;
+    - raw_dollar_quote: $$
+- statement_terminator: ;
+- statement:
+    create_procedure_statement:
+    - keyword: CREATE
+    - keyword: PROCEDURE
+    - function_name:
+        function_name_identifier: case_demo_2
+    - function_parameter_list:
+        bracketed:
+          start_bracket: (
+          parameter: v
+          data_type:
+            data_type_identifier: VARCHAR
+          end_bracket: )
+    - keyword: RETURNS
+    - data_type:
+        data_type_identifier: VARCHAR
+    - keyword: LANGUAGE
+    - keyword: PYTHON
+    - keyword: AS
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - word: BEGIN
+      - word: CASE
+      - word: WHEN
+      - word: v
+      - equals: '='
+      - single_quote: "'first choice'"
+      - word: THEN
+      - word: RETURN
+      - single_quote: "'one'"
+      - semicolon: ;
+      - word: WHEN
+      - word: v
+      - equals: '='
+      - single_quote: "'second choice'"
+      - word: THEN
+      - word: RETURN
+      - single_quote: "'two'"
+      - semicolon: ;
+      - word: ELSE
+      - word: RETURN
+      - single_quote: "'unexpected choice'"
+      - semicolon: ;
+      - word: END
+      - semicolon: ;
+      - word: END
+      - semicolon: ;
+      - raw_dollar_quote: $$
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: expression_to_evaluate
+      - data_type:
+          data_type_identifier: VARCHAR
+      - keyword: DEFAULT
+      - expression:
+          quoted_literal: "'default value'"
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: expression_to_evaluate
+              assignment_operator: :=
+              expression:
+                quoted_literal: "'value a'"
+        - statement_terminator: ;
+        - statement:
+            simple_case_segment:
+            - keyword: CASE
+            - bracketed:
+                start_bracket: (
+                variable: expression_to_evaluate
+                end_bracket: )
+            - keyword: WHEN
+            - quoted_literal: "'value a'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'x'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'value b'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'y'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'value c'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'z'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'default value'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'default'"
+            - statement_terminator: ;
+            - keyword: ELSE
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'other'"
+            - statement_terminator: ;
+            - keyword: END
+        - statement_terminator: ;
+        - keyword: END
+- statement_terminator: ;
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: expression_to_evaluate
+      - data_type:
+          data_type_identifier: VARCHAR
+      - keyword: DEFAULT
+      - expression:
+          quoted_literal: "'default value'"
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            scripting_let_statement:
+              variable: expression_to_evaluate
+              assignment_operator: :=
+              expression:
+                quoted_literal: "'value a'"
+        - statement_terminator: ;
+        - statement:
+            simple_case_segment:
+            - keyword: CASE
+            - bracketed:
+                start_bracket: (
+                variable: expression_to_evaluate
+                end_bracket: )
+            - keyword: WHEN
+            - quoted_literal: "'value a'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'x'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'value b'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'y'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'value c'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'z'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - quoted_literal: "'default value'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'default'"
+            - statement_terminator: ;
+            - keyword: ELSE
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'other'"
+            - statement_terminator: ;
+            - keyword: END
+        - statement_terminator: ;
+        - keyword: END
+- statement_terminator: ;
+- statement:
+    execute_immediate_clause:
+    - keyword: EXECUTE
+    - keyword: IMMEDIATE
+    - scripting_declare_statement:
+      - keyword: DECLARE
+      - variable: a
+      - data_type:
+          data_type_identifier: VARCHAR
+      - keyword: DEFAULT
+      - expression:
+          quoted_literal: "'x'"
+      - statement_terminator: ;
+      - variable: b
+      - data_type:
+          data_type_identifier: VARCHAR
+      - keyword: DEFAULT
+      - expression:
+          quoted_literal: "'y'"
+      - statement_terminator: ;
+      - variable: c
+      - data_type:
+          data_type_identifier: VARCHAR
+      - keyword: DEFAULT
+      - expression:
+          quoted_literal: "'z'"
+      - statement_terminator: ;
+      - scripting_block_statement:
+        - keyword: BEGIN
+        - statement:
+            searched_case_segment:
+            - keyword: CASE
+            - keyword: WHEN
+            - expression:
+                column_reference:
+                  naked_identifier: a
+                comparison_operator:
+                  raw_comparison_operator: '='
+                quoted_literal: "'x'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'a is x'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - expression:
+                column_reference:
+                  naked_identifier: b
+                comparison_operator:
+                  raw_comparison_operator: '='
+                quoted_literal: "'y'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'b is y'"
+            - statement_terminator: ;
+            - keyword: WHEN
+            - expression:
+                column_reference:
+                  naked_identifier: c
+                comparison_operator:
+                  raw_comparison_operator: '='
+                quoted_literal: "'z'"
+            - keyword: THEN
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'c is z'"
+            - statement_terminator: ;
+            - keyword: ELSE
+            - statement:
+                return_statement:
+                  keyword: RETURN
+                  expression:
+                    quoted_literal: "'a is not x, b is not y, and c is not z'"
+            - statement_terminator: ;
+            - keyword: END
+        - statement_terminator: ;
+        - keyword: END
+- statement_terminator: ;

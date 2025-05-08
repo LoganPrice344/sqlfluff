@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: ce11b21cd1d6cf692076fb45e9a24711a81a37da902438e1a23756520b4cc67b
+_hash: 56a5c936085aedaff33d9a9dd3ee7e6a9a2a0ad1704ee7a4a45cd32f0b8c2142
 file:
 - statement:
     select_statement:
@@ -137,7 +137,12 @@ file:
                   end_bracket: )
         end_bracket: )
     - keyword: AS
-    - udf_body: "$$\n  ...\n  $$"
+    - test_dollar_quote:
+      - raw_dollar_quote: $$
+      - dot: .
+      - dot: .
+      - dot: .
+      - raw_dollar_quote: $$
 - statement_terminator: ;
 - statement:
     create_procedure_statement:
@@ -174,5 +179,26 @@ file:
     - keyword: LANGUAGE
     - keyword: SQL
     - keyword: AS
-    - udf_body: "$$\n    ...\n  $$"
+    - raw_dollar_quote: $$
+    - scripting_block_statement:
+      - keyword: BEGIN
+      - statement:
+          select_statement:
+            select_clause:
+              keyword: SELECT
+              select_clause_element:
+                wildcard_expression:
+                  wildcard_identifier:
+                    star: '*'
+            from_clause:
+              keyword: FROM
+              from_expression:
+                from_expression_element:
+                  table_expression:
+                    table_reference:
+                      naked_identifier: my_table
+      - statement_terminator: ;
+      - keyword: END
+    - statement_terminator: ;
+    - raw_dollar_quote: $$
 - statement_terminator: ;

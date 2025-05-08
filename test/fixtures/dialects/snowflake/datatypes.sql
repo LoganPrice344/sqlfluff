@@ -21,5 +21,7 @@ CREATE OR REPLACE PROCEDURE my_procedure(values ARRAY(INTEGER))
   LANGUAGE SQL
   AS
   $$
-    ...
+    BEGIN
+    SELECT * FROM my_table;
+    END;
   $$;
